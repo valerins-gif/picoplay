@@ -2,182 +2,379 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>PicóPlay — Programación Musical Comunitaria</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PicóPlay Cartagena — Consola de Programación Radial</title>
     <link rel="stylesheet" th:href="@{/css/estilos.css}">
 </head>
 <body>
-<header>
-    <div>
-        <h1>PicóPlay Cartagena</h1>
-        <p>Tecnología que organiza la radio y promueve el talento local</p>
+
+<!-- BARRA LATERAL DE NAVEGACIÓN -->
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-logo">PP</div>
+        <div class="brand-text">
+            <h1>PicóPlay</h1>
+            <span>Radio Comunitaria CTG</span>
+        </div>
     </div>
-    <form th:action="@{/franja}" method="post" class="inline">
-        <select name="franja">
-            <option th:selected="${franjaActiva == 'Franja Mañana (08:00 - 12:00)'}">Franja Mañana (08:00 - 12:00)</option>
-            <option th:selected="${franjaActiva == 'Franja Tarde Picotera (14:00 - 18:00)'}">Franja Tarde Picotera (14:00 - 18:00)</option>
-            <option th:selected="${franjaActiva == 'Franja Nocturna Local (19:00 - 23:00)'}">Franja Nocturna Local (19:00 - 23:00)</option>
-        </select>
-        <button type="submit" class="cyan">Fijar Franja</button>
-    </form>
-</header>
 
-<div class="container">
-    <!-- MÓDULO 1: CATÁLOGO + BST -->
-    <div class="card">
-        <h2>1. Catálogo Musical <span class="badge-ed">Árbol Binario de Búsqueda (BST)</span></h2>
+    <nav class="nav-menu">
+        <button type="button" class="nav-btn active" data-tab="tab-cabina" onclick="cambiarTab('tab-cabina', this)">
+            <span>Cabina y Parrilla</span>
+            <span class="nav-pill" th:text="${#lists.size(parrilla)}">0</span>
+        </button>
+        <button type="button" class="nav-btn" data-tab="tab-catalogo" onclick="cambiarTab('tab-catalogo', this)">
+            <span>Catálogo Musical</span>
+            <span class="nav-pill" th:text="${#lists.size(catalogo)}">0</span>
+        </button>
+        <button type="button" class="nav-btn" data-tab="tab-rotacion" onclick="cambiarTab('tab-rotacion', this)">
+            <span>Talento Local</span>
+            <span class="nav-pill" th:text="${#lists.size(anilloLocal)}">0</span>
+        </button>
+        <button type="button" class="nav-btn" data-tab="tab-historial" onclick="cambiarTab('tab-historial', this)">
+            <span>Historial y Auditoría</span>
+            <span class="nav-pill" th:text="${#lists.size(historial)}">0</span>
+        </button>
+    </nav>
 
-        <form th:action="@{/}" method="get" class="inline">
-            <input type="text" name="busqueda" placeholder="Buscar título exacto en BST..." th:value="${terminoBuscado}">
-            <button type="submit" class="sec">Buscar O(log n)</button>
-        </form>
+    <div class="sidebar-footer">
+        <strong>Motor Estructuras de Datos</strong><br>
+        BST &bull; Lista Doble &bull; Lista Circular &bull; Cola FIFO
+    </div>
+</aside>
 
-        <div th:if="${terminoBuscado != null}" class="alerta">
-            <span th:if="${resultadoBusqueda != null}">
-                <strong>Encontrado en BST:</strong> <span th:text="${resultadoBusqueda.titulo}"></span> —
-                <span th:text="${resultadoBusqueda.artista}"></span> (<span th:text="${resultadoBusqueda.genero}"></span>)
-            </span>
-            <span th:if="${resultadoBusqueda == null}">
-                No se encontró "<span th:text="${terminoBuscado}"></span>" en el árbol.
-            </span>
+<!-- CONTENIDO PRINCIPAL -->
+<div class="main-wrapper">
+    <header class="topbar">
+        <div class="topbar-title">
+            <h2>Consola de Programación Musical</h2>
+            <p>Tecnología que organiza la radio y promueve el talento local de Cartagena</p>
         </div>
 
-        <form th:action="@{/canciones}" method="post" class="inline">
-            <input type="text" name="titulo" placeholder="Título" required>
-            <input type="text" name="artista" placeholder="Artista" required>
-            <select name="genero">
-                <option>Champeta</option>
-                <option>Salsa</option>
-                <option>Vallenato</option>
-                <option>Cumbia</option>
+        <form th:action="@{/franja}" method="post" class="franja-form">
+            <select name="franja" aria-label="Franja horaria">
+                <option th:selected="${franjaActiva == 'Franja Mañana (08:00 - 12:00)'}">Franja Mañana (08:00 - 12:00)</option>
+                <option th:selected="${franjaActiva == 'Franja Tarde Picotera (14:00 - 18:00)'}">Franja Tarde Picotera (14:00 - 18:00)</option>
+                <option th:selected="${franjaActiva == 'Franja Nocturna Local (19:00 - 23:00)'}">Franja Nocturna Local (19:00 - 23:00)</option>
             </select>
-            <label><input type="checkbox" name="artistaLocal" value="true"> Talento Local</label>
-            <button type="submit">Registrar</button>
+            <button type="submit" class="btn-sec">Fijar Franja</button>
         </form>
+    </header>
 
-        <table>
-            <thead>
-                <tr><th>Título (In-Order)</th><th>Artista</th><th>Género</th><th>Suena</th><th>Acción</th></tr>
-            </thead>
-            <tbody>
-                <tr th:each="c : ${catalogo}">
-                    <td th:text="${c.titulo}"></td>
-                    <td>
-                        <span th:text="${c.artista}"></span>
-                        <span th:if="${c.artistaLocal}" class="badge-local">Local</span>
-                    </td>
-                    <td th:text="${c.genero}"></td>
-                    <td th:text="${c.vecesReproducida}"></td>
-                    <td>
-                        <form th:action="@{'/parrilla/agregar/' + ${c.id}}" method="post">
-                            <button type="submit" class="sm sec">+ Parrilla</button>
+    <main class="content">
+        <!-- INDICADORES RÁPIDOS -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Catálogo Indexado</div>
+                <div class="kpi-value" th:text="${#lists.size(catalogo)}">0</div>
+                <div class="kpi-sub">Árbol Binario (BST)</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">En Parrilla Horaria</div>
+                <div class="kpi-value" th:text="${#lists.size(parrilla)}">0</div>
+                <div class="kpi-sub">Lista Doblemente Enlazada</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Anillo Talento Local</div>
+                <div class="kpi-value" th:text="${#lists.size(anilloLocal)}">0</div>
+                <div class="kpi-sub">Lista Circular Equitativa</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Pistas Emitidas</div>
+                <div class="kpi-value" th:text="${#lists.size(historial)}">0</div>
+                <div class="kpi-sub">Guardadas en PostgreSQL</div>
+            </div>
+        </section>
+
+        <!-- VISTA 1: CABINA Y PARRILLA (OPERACIÓN EN VIVO) -->
+        <section id="tab-cabina" class="tab-section active">
+            <div class="spotlight-box" th:if="${siguienteLocal != null}">
+                <div>
+                    <strong>Siguiente turno equitativo en anillo local (Lista Circular)</strong>
+                    <span th:text="${siguienteLocal.artista + ' — ' + siguienteLocal.titulo + ' (' + siguienteLocal.genero + ')'}"></span>
+                </div>
+                <form th:action="@{/rotacion/inyectar}" method="post">
+                    <button type="submit" class="btn-cyan">+ Insertar Turno Local en Parrilla</button>
+                </form>
+            </div>
+
+            <div class="two-col">
+                <!-- COLUMNA IZQUIERDA: PARRILLA HORARIA -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Parrilla Horaria Activa</h3>
+                        <span class="badge-ed">Lista Doblemente Enlazada</span>
+                    </div>
+
+                    <div class="action-bar">
+                        <form th:action="@{/cabina/cargar}" method="post">
+                            <button type="submit">Enviar Parrilla a Cabina &rarr;</button>
                         </form>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                        <button type="button" class="btn-ghost" onclick="cambiarTab('tab-catalogo', document.querySelector('[data-tab=tab-catalogo]'))">
+                            + Elegir desde Catálogo
+                        </button>
+                    </div>
 
-    <!-- MÓDULO 2: PARRILLA HORARIA + LISTA DOBLEMENTE ENLAZADA -->
-    <div class="card">
-        <h2>2. Parrilla Horaria <span class="badge-ed">Lista Doblemente Enlazada</span></h2>
-        <p style="font-size: 0.85rem;">Franja actual: <strong th:text="${franjaActiva}"></strong></p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Orden</th>
+                                    <th>Canción</th>
+                                    <th>Artista</th>
+                                    <th>Controles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="p, stat : ${parrilla}">
+                                    <td th:text="${stat.count}">1</td>
+                                    <td>
+                                        <strong th:text="${p.titulo}"></strong>
+                                        <span th:if="${p.artistaLocal}" class="badge-local">Local</span>
+                                    </td>
+                                    <td th:text="${p.artista}"></td>
+                                    <td style="display:flex; gap:0.35rem;">
+                                        <form th:action="@{'/parrilla/subir/' + ${p.id}}" method="post">
+                                            <button type="submit" class="btn-sm btn-ghost" title="Subir posición">&uarr;</button>
+                                        </form>
+                                        <form th:action="@{'/parrilla/eliminar/' + ${p.id}}" method="post">
+                                            <button type="submit" class="btn-sm btn-danger" title="Quitar">Quitar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(parrilla)}">
+                                    <td colspan="4" class="empty-state">
+                                        La parrilla está vacía. Inserta un turno local arriba o elige temas desde el Catálogo Musical.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-        <div class="inline" style="display:flex; gap:0.5rem; margin-bottom:0.8rem;">
-            <form th:action="@{/rotacion/inyectar}" method="post">
-                <button type="submit" class="cyan">+ Turno Equitativo Local</button>
-            </form>
-            <form th:action="@{/cabina/cargar}" method="post">
-                <button type="submit">Enviar Parrilla a Cabina &rarr;</button>
-            </form>
-        </div>
+                <!-- COLUMNA DERECHA: CABINA EN VIVO -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Cabina de Emisión en Vivo</h3>
+                        <span class="badge-ed">Cola FIFO</span>
+                    </div>
 
-        <table>
-            <thead>
-                <tr><th>#</th><th>Canción</th><th>Artista</th><th>Reordenar / Quitar</th></tr>
-            </thead>
-            <tbody>
-                <tr th:each="p, stat : ${parrilla}">
-                    <td th:text="${stat.count}"></td>
-                    <td th:text="${p.titulo}"></td>
-                    <td th:text="${p.artista}"></td>
-                    <td style="display:flex; gap:0.3rem;">
-                        <form th:action="@{'/parrilla/subir/' + ${p.id}}" method="post">
-                            <button type="submit" class="sm sec">&uarr;</button>
+                    <div class="action-bar">
+                        <form th:action="@{/cabina/reproducir}" method="post">
+                            <button type="submit" class="btn-sec">&#9654; Emitir Siguiente Pista y Registrar</button>
                         </form>
-                        <form th:action="@{'/parrilla/eliminar/' + ${p.id}}" method="post">
-                            <button type="submit" class="sm">X</button>
-                        </form>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(parrilla)}">
-                    <td colspan="4">Parrilla vacía. Agrega canciones desde el catálogo o usa la rotación local.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                    </div>
 
-    <!-- MÓDULO 3: ROTACIÓN EQUITATIVA + LISTA CIRCULAR -->
-    <div class="card">
-        <h2>3. Rotación Talento Cartagenero <span class="badge-ed">Lista Circular</span></h2>
-        <div class="alerta" th:if="${siguienteLocal != null}">
-            <strong>Siguiente artista local en el anillo:</strong>
-            <span th:text="${siguienteLocal.artista}"></span> — "<span th:text="${siguienteLocal.titulo}"></span>"
-        </div>
-        <table>
-            <thead><tr><th>Posición en Anillo</th><th>Artista Local</th><th>Canción</th><th>Reproducciones</th></tr></thead>
-            <tbody>
-                <tr th:each="loc, stat : ${anilloLocal}">
-                    <td th:text="${stat.count}"></td>
-                    <td th:text="${loc.artista}"></td>
-                    <td th:text="${loc.titulo}"></td>
-                    <td th:text="${loc.vecesReproducida}"></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Turno</th>
+                                    <th>Estado</th>
+                                    <th>Canción</th>
+                                    <th>Artista</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="q, stat : ${colaCabina}">
+                                    <td th:text="${stat.count}">1</td>
+                                    <td>
+                                        <span th:if="${stat.first}" class="badge-live">EN CABINA</span>
+                                        <span th:unless="${stat.first}" style="color:var(--text-muted); font-size:0.8rem;">En cola</span>
+                                    </td>
+                                    <td th:text="${q.titulo}"></td>
+                                    <td th:text="${q.artista}"></td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(colaCabina)}">
+                                    <td colspan="4" class="empty-state">
+                                        Cabina en espera. Arma tu parrilla a la izquierda y envíala a cabina para transmitir.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- MÓDULO 4: CABINA EN VIVO + COLA FIFO -->
-    <div class="card">
-        <h2>4. Cabina en Vivo <span class="badge-ed">Cola FIFO</span></h2>
-        <form th:action="@{/cabina/reproducir}" method="post" style="margin-bottom:0.8rem;">
-            <button type="submit" class="sec">&#9654; Reproducir Siguiente en Cola y Registrar</button>
-        </form>
-        <table>
-            <thead><tr><th>Turno</th><th>Estado</th><th>Canción</th><th>Artista</th></tr></thead>
-            <tbody>
-                <tr th:each="q, stat : ${colaCabina}">
-                    <td th:text="${stat.count}"></td>
-                    <td th:text="${stat.first ? 'AL AIRE / SIGUIENTE' : 'En espera'}"></td>
-                    <td th:text="${q.titulo}"></td>
-                    <td th:text="${q.artista}"></td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(colaCabina)}">
-                    <td colspan="4">No hay pistas en cabina. Envía una parrilla para iniciar emisión.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        <!-- VISTA 2: CATÁLOGO MUSICAL (BST) -->
+        <section id="tab-catalogo" class="tab-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Catálogo Musical Ordenado Alfabéticamente</h3>
+                    <span class="badge-ed">Árbol Binario de Búsqueda (BST)</span>
+                </div>
 
-    <!-- MÓDULO 5: HISTORIAL PERSISTENTE EN POSTGRESQL -->
-    <div class="card full-width">
-        <h2>5. Auditoría e Historial de Reproducciones <span class="badge-ed">Persistencia PostgreSQL</span></h2>
-        <table>
-            <thead><tr><th>Fecha y Hora</th><th>Franja</th><th>Canción</th><th>Artista</th><th>Género</th><th>Talento</th></tr></thead>
-            <tbody>
-                <tr th:each="h : ${historial}">
-                    <td th:text="${h.fechaFormateada}"></td>
-                    <td th:text="${h.franjaHoraria}"></td>
-                    <td th:text="${h.tituloCancion}"></td>
-                    <td th:text="${h.artista}"></td>
-                    <td th:text="${h.genero}"></td>
-                    <td th:text="${h.artistaLocal ? 'Local (Cartagena)' : 'General'}"></td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(historial)}">
-                    <td colspan="6">Aún no se han registrado reproducciones al aire.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                <!-- BÚSQUEDA RÁPIDA EN BST -->
+                <form th:action="@{/}" method="get" class="search-bar">
+                    <input type="text" name="busqueda" placeholder="Buscar canción por título exacto en el Árbol Binario..." th:value="${terminoBuscado}">
+                    <button type="submit" class="btn-sec">Buscar en BST</button>
+                    <a th:if="${terminoBuscado != null}" th:href="@{/}" class="btn btn-ghost" style="text-decoration:none;">Limpiar</a>
+                </form>
+
+                <div th:if="${terminoBuscado != null}" class="spotlight-box">
+                    <div th:if="${resultadoBusqueda != null}">
+                        <strong>Coincidencia encontrada en O(log n)</strong>
+                        <span th:text="${resultadoBusqueda.titulo + ' — ' + resultadoBusqueda.artista + ' (' + resultadoBusqueda.genero + ')'}"></span>
+                    </div>
+                    <div th:if="${resultadoBusqueda == null}">
+                        <strong>Sin resultados en el árbol</strong>
+                        <span>No existe ninguna pista titulada "<span th:text="${terminoBuscado}"></span>".</span>
+                    </div>
+                    <form th:if="${resultadoBusqueda != null}" th:action="@{'/parrilla/agregar/' + ${resultadoBusqueda.id}}" method="post">
+                        <button type="submit" class="btn-sm">+ Enviar a Parrilla</button>
+                    </form>
+                </div>
+
+                <!-- FORMULARIO DE REGISTRO -->
+                <form th:action="@{/canciones}" method="post" class="form-grid">
+                    <input type="text" name="titulo" placeholder="Título de la canción" required>
+                    <input type="text" name="artista" placeholder="Nombre del artista o agrupación" required>
+                    <select name="genero">
+                        <option>Champeta</option>
+                        <option>Salsa</option>
+                        <option>Vallenato</option>
+                        <option>Cumbia</option>
+                    </select>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="artistaLocal" value="true"> Talento Local
+                    </label>
+                    <button type="submit">+ Registrar Canción</button>
+                </form>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Título (Recorrido In-Order)</th>
+                                <th>Artista</th>
+                                <th>Género</th>
+                                <th>Reproducciones</th>
+                                <th>Programar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="c : ${catalogo}">
+                                <td><strong th:text="${c.titulo}"></strong></td>
+                                <td>
+                                    <span th:text="${c.artista}"></span>
+                                    <span th:if="${c.artistaLocal}" class="badge-local">Local</span>
+                                </td>
+                                <td th:text="${c.genero}"></td>
+                                <td th:text="${c.vecesReproducida}">0</td>
+                                <td>
+                                    <form th:action="@{'/parrilla/agregar/' + ${c.id}}" method="post">
+                                        <button type="submit" class="btn-sm btn-sec">+ Añadir a Parrilla</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 3: ROTACIÓN TALENTO LOCAL (LISTA CIRCULAR) -->
+        <section id="tab-rotacion" class="tab-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Anillo de Rotación Equitativa — Artistas de Cartagena</h3>
+                    <span class="badge-ed">Lista Circular</span>
+                </div>
+
+                <div class="spotlight-box" th:if="${siguienteLocal != null}">
+                    <div>
+                        <strong>Puntero actual del anillo circular</strong>
+                        <span th:text="${siguienteLocal.artista + ' — ' + siguienteLocal.titulo}"></span>
+                    </div>
+                    <form th:action="@{/rotacion/inyectar}" method="post">
+                        <button type="submit" class="btn-cyan">Asignar Turno a Parrilla y Avanzar Anillo</button>
+                    </form>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nodo en Anillo</th>
+                                <th>Artista Local</th>
+                                <th>Canción</th>
+                                <th>Género</th>
+                                <th>Veces Emitida</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="loc, stat : ${anilloLocal}">
+                                <td th:text="${'Nodo #' + stat.count}"></td>
+                                <td><strong th:text="${loc.artista}"></strong></td>
+                                <td th:text="${loc.titulo}"></td>
+                                <td th:text="${loc.genero}"></td>
+                                <td th:text="${loc.vecesReproducida}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 4: HISTORIAL PERSISTENTE -->
+        <section id="tab-historial" class="tab-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Auditoría de Emisiones y Reporte de Talento Local</h3>
+                    <span class="badge-ed">Base de Datos PostgreSQL</span>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha y Hora</th>
+                                <th>Franja Horaria</th>
+                                <th>Canción</th>
+                                <th>Artista</th>
+                                <th>Género</th>
+                                <th>Clasificación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="h : ${historial}">
+                                <td th:text="${h.fechaFormateada}"></td>
+                                <td th:text="${h.franjaHoraria}"></td>
+                                <td><strong th:text="${h.tituloCancion}"></strong></td>
+                                <td th:text="${h.artista}"></td>
+                                <td th:text="${h.genero}"></td>
+                                <td>
+                                    <span th:if="${h.artistaLocal}" class="badge-local">Talento Local</span>
+                                    <span th:unless="${h.artistaLocal}" style="color:var(--text-muted);">General</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(historial)}">
+                                <td colspan="6" class="empty-state">Aún no hay emisiones registradas en la base de datos.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
+
+<script th:inline="javascript">
+    function cambiarTab(tabId, btn) {
+        document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if (btn) btn.classList.add('active');
+        localStorage.setItem('picoplay_tab', tabId);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const hayBusqueda = /*[[${terminoBuscado != null}]]*/ false;
+        const tabGuardada = hayBusqueda ? 'tab-catalogo' : (localStorage.getItem('picoplay_tab') || 'tab-cabina');
+        const btn = document.querySelector(`[data-tab="${tabGuardada}"]`);
+        if (btn) cambiarTab(tabGuardada, btn);
+    });
+</script>
 </body>
 </html>
