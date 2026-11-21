@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>PicóPlay — Programación Musical Comunitaria</title>
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body>
+<header>
+    <div>
+        <h1>PicóPlay Cartagena</h1>
+        <p>Tecnología que organiza la radio y promueve el talento local</p>
+    </div>
+    <form th:action="@{/franja}" method="post" class="inline">
+        <select name="franja">
+            <option th:selected="${franjaActiva == 'Franja Mañana (08:00 - 12:00)'}">Franja Mañana (08:00 - 12:00)</option>
+            <option th:selected="${franjaActiva == 'Franja Tarde Picotera (14:00 - 18:00)'}">Franja Tarde Picotera (14:00 - 18:00)</option>
+            <option th:selected="${franjaActiva == 'Franja Nocturna Local (19:00 - 23:00)'}">Franja Nocturna Local (19:00 - 23:00)</option>
+        </select>
+        <button type="submit" class="cyan">Fijar Franja</button>
+    </form>
+</header>
+
+<div class="container">
+    <!-- MÓDULO 1: CATÁLOGO + BST -->
+    <div class="card">
+        <h2>1. Catálogo Musical <span class="badge-ed">Árbol Binario de Búsqueda (BST)</span></h2>
+
+        <form th:action="@{/}" method="get" class="inline">
+            <input type="text" name="busqueda" placeholder="Buscar título exacto en BST..." th:value="${terminoBuscado}">
+            <button type="submit" class="sec">Buscar O(log n)</button>
+        </form>
+
+        <div th:if="${terminoBuscado != null}" class="alerta">
+            <span th:if="${resultadoBusqueda != null}">
+                <strong>Encontrado en BST:</strong> <span th:text="${resultadoBusqueda.titulo}"></span> —
+                <span th:text="${resultadoBusqueda.artista}"></span> (<span th:text="${resultadoBusqueda.genero}"></span>)
+            </span>
+            <span th:if="${resultadoBusqueda == null}">
+                No se encontró "<span th:text="${terminoBuscado}"></span>" en el árbol.
+            </span>
+        </div>
+
+        <form th:action="@{/canciones}" method="post" class="inline">
+            <input type="text" name="titulo" placeholder="Título" required>
+            <input type="text" name="artista" placeholder="Artista" required>
+            <select name="genero">
+                <option>Champeta</option>
+                <option>Salsa</option>
+                <option>Vallenato</option>
+                <option>Cumbia</option>
+            </select>
+            <label><input type="checkbox" name="artistaLocal" value="true"> Talento Local</label>
+            <button type="submit">Registrar</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr><th>Título (In-Order)</th><th>Artista</th><th>Género</th><th>Suena</th><th>Acción</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="c : ${catalogo}">
+                    <td th:text="${c.titulo}"></td>
+                    <td>
+                        <span th:text="${c.artista}"></span>
+                        <span th:if="${c.artistaLocal}" class="badge-local">Local</span>
+                    </td>
+                    <td th:text="${c.genero}"></td>
+                    <td th:text="${c.vecesReproducida}"></td>
+                    <td>
+                        <form th:action="@{'/parrilla/agregar/' + ${c.id}}" method="post">
+                            <button type="submit" class="sm sec">+ Parrilla</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MÓDULO 2: PARRILLA HORARIA + LISTA DOBLEMENTE ENLAZADA -->
+    <div class="card">
+        <h2>2. Parrilla Horaria <span class="badge-ed">Lista Doblemente Enlazada</span></h2>
+        <p style="font-size: 0.85rem;">Franja actual: <strong th:text="${franjaActiva}"></strong></p>
+
+        <div class="inline" style="display:flex; gap:0.5rem; margin-bottom:0.8rem;">
+            <form th:action="@{/rotacion/inyectar}" method="post">
+                <button type="submit" class="cyan">+ Turno Equitativo Local</button>
+            </form>
+            <form th:action="@{/cabina/cargar}" method="post">
+                <button type="submit">Enviar Parrilla a Cabina &rarr;</button>
+            </form>
+        </div>
+
+        <table>
+            <thead>
+                <tr><th>#</th><th>Canción</th><th>Artista</th><th>Reordenar / Quitar</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="p, stat : ${parrilla}">
+                    <td th:text="${stat.count}"></td>
+                    <td th:text="${p.titulo}"></td>
+                    <td th:text="${p.artista}"></td>
+                    <td style="display:flex; gap:0.3rem;">
+                        <form th:action="@{'/parrilla/subir/' + ${p.id}}" method="post">
+                            <button type="submit" class="sm sec">&uarr;</button>
+                        </form>
+                        <form th:action="@{'/parrilla/eliminar/' + ${p.id}}" method="post">
+                            <button type="submit" class="sm">X</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(parrilla)}">
+                    <td colspan="4">Parrilla vacía. Agrega canciones desde el catálogo o usa la rotación local.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MÓDULO 3: ROTACIÓN EQUITATIVA + LISTA CIRCULAR -->
+    <div class="card">
+        <h2>3. Rotación Talento Cartagenero <span class="badge-ed">Lista Circular</span></h2>
+        <div class="alerta" th:if="${siguienteLocal != null}">
+            <strong>Siguiente artista local en el anillo:</strong>
+            <span th:text="${siguienteLocal.artista}"></span> — "<span th:text="${siguienteLocal.titulo}"></span>"
+        </div>
+        <table>
+            <thead><tr><th>Posición en Anillo</th><th>Artista Local</th><th>Canción</th><th>Reproducciones</th></tr></thead>
+            <tbody>
+                <tr th:each="loc, stat : ${anilloLocal}">
+                    <td th:text="${stat.count}"></td>
+                    <td th:text="${loc.artista}"></td>
+                    <td th:text="${loc.titulo}"></td>
+                    <td th:text="${loc.vecesReproducida}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MÓDULO 4: CABINA EN VIVO + COLA FIFO -->
+    <div class="card">
+        <h2>4. Cabina en Vivo <span class="badge-ed">Cola FIFO</span></h2>
+        <form th:action="@{/cabina/reproducir}" method="post" style="margin-bottom:0.8rem;">
+            <button type="submit" class="sec">&#9654; Reproducir Siguiente en Cola y Registrar</button>
+        </form>
+        <table>
+            <thead><tr><th>Turno</th><th>Estado</th><th>Canción</th><th>Artista</th></tr></thead>
+            <tbody>
+                <tr th:each="q, stat : ${colaCabina}">
+                    <td th:text="${stat.count}"></td>
+                    <td th:text="${stat.first ? 'AL AIRE / SIGUIENTE' : 'En espera'}"></td>
+                    <td th:text="${q.titulo}"></td>
+                    <td th:text="${q.artista}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(colaCabina)}">
+                    <td colspan="4">No hay pistas en cabina. Envía una parrilla para iniciar emisión.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MÓDULO 5: HISTORIAL PERSISTENTE EN POSTGRESQL -->
+    <div class="card full-width">
+        <h2>5. Auditoría e Historial de Reproducciones <span class="badge-ed">Persistencia PostgreSQL</span></h2>
+        <table>
+            <thead><tr><th>Fecha y Hora</th><th>Franja</th><th>Canción</th><th>Artista</th><th>Género</th><th>Talento</th></tr></thead>
+            <tbody>
+                <tr th:each="h : ${historial}">
+                    <td th:text="${h.fechaFormateada}"></td>
+                    <td th:text="${h.franjaHoraria}"></td>
+                    <td th:text="${h.tituloCancion}"></td>
+                    <td th:text="${h.artista}"></td>
+                    <td th:text="${h.genero}"></td>
+                    <td th:text="${h.artistaLocal ? 'Local (Cartagena)' : 'General'}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(historial)}">
+                    <td colspan="6">Aún no se han registrado reproducciones al aire.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
