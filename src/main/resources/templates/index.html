@@ -1,380 +1,762 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PicóPlay Cartagena — Consola de Programación Radial</title>
-    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+    <title>PicóPlay Radio | Sistema de Gestión Musical</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Nuevas Tipografías: Outfit (Títulos) e Inter (Cuerpo y Datos) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', 'sans-serif'],
+                        display: ['"Outfit"', 'sans-serif'],
+                        mono: ['"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        h1, h2, h3, .font-heading {
+            font-family: 'Outfit', sans-serif;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @keyframes equalizer {
+            0%, 100% { height: 25%; }
+            50% { height: 100%; }
+        }
+        .eq-bar { animation: equalizer 0.8s ease-in-out infinite; }
+        .eq-bar:nth-child(2) { animation-delay: 0.2s; }
+        .eq-bar:nth-child(3) { animation-delay: 0.4s; }
+        .eq-bar:nth-child(4) { animation-delay: 0.1s; }
+        .paused .eq-bar { animation-play-state: paused; height: 35%; }
+    </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-fuchsia-200 selection:text-fuchsia-900">
 
-<!-- BARRA LATERAL DE NAVEGACIÓN -->
-<aside class="sidebar">
-    <div class="brand">
-        <div class="brand-logo">PP</div>
-        <div class="brand-text">
-            <h1>PicóPlay</h1>
-            <span>Radio Comunitaria CTG</span>
+    <!-- Notificación Toast Flotante -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- 1. PANEL SUPERIOR (ENCABEZADO) -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+                <!-- Identidad de la Emisora -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-500 p-0.5 shadow-md shadow-fuchsia-500/20">
+                            <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+                                <i data-lucide="radio" class="w-6 h-6 text-fuchsia-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+                                    PicóPlay Radio
+                                </h1>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                                    </span>
+                                    AL AIRE
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 font-medium">Programación Musical y Talento Local • Cartagena</p>
+                        </div>
+                    </div>
+
+                    <div class="lg:hidden text-right">
+                        <div id="clock-mobile" class="text-sm font-bold text-slate-700">00:00:00</div>
+                        <div class="text-[11px] text-slate-400">FM Comunitaria</div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas Rápidas & Reloj -->
+                <div class="grid grid-cols-3 sm:flex sm:items-center gap-2 sm:gap-4">
+                    <div class="bg-purple-50/70 border border-purple-100 rounded-xl px-3 py-2 flex items-center gap-2.5">
+                        <div class="p-1.5 bg-purple-100 text-purple-600 rounded-lg hidden sm:block">
+                            <i data-lucide="disc-3" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-semibold text-purple-600/80 uppercase tracking-wider">Catálogo</p>
+                            <p id="stat-total-songs" class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">0</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-cyan-50/70 border border-cyan-100 rounded-xl px-3 py-2 flex items-center gap-2.5">
+                        <div class="p-1.5 bg-cyan-100 text-cyan-600 rounded-lg hidden sm:block">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-semibold text-cyan-700/80 uppercase tracking-wider">Emisiones</p>
+                            <p id="stat-total-plays" class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">0</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-pink-50/70 border border-pink-100 rounded-xl px-3 py-2 flex items-center gap-2.5">
+                        <div class="p-1.5 bg-pink-100 text-pink-600 rounded-lg hidden sm:block">
+                            <i data-lucide="crown" class="w-4 h-4"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-semibold text-pink-600/80 uppercase tracking-wider">Top Artista</p>
+                            <p id="stat-top-artist" class="text-sm sm:text-base font-extrabold text-slate-800 truncate max-w-[110px] sm:max-w-[140px] leading-tight">-</p>
+                        </div>
+                    </div>
+
+                    <div class="hidden lg:flex flex-col items-end pl-3 border-l border-slate-200">
+                        <span id="clock-desktop" class="text-lg font-bold text-slate-800 tracking-tight tabular-nums">00:00:00</span>
+                        <span id="date-desktop" class="text-xs text-slate-400 font-medium">Cargando fecha...</span>
+                    </div>
+                </div>
+
+            </div>
         </div>
-    </div>
-
-    <nav class="nav-menu">
-        <button type="button" class="nav-btn active" data-tab="tab-cabina" onclick="cambiarTab('tab-cabina', this)">
-            <span>Cabina y Parrilla</span>
-            <span class="nav-pill" th:text="${#lists.size(parrilla)}">0</span>
-        </button>
-        <button type="button" class="nav-btn" data-tab="tab-catalogo" onclick="cambiarTab('tab-catalogo', this)">
-            <span>Catálogo Musical</span>
-            <span class="nav-pill" th:text="${#lists.size(catalogo)}">0</span>
-        </button>
-        <button type="button" class="nav-btn" data-tab="tab-rotacion" onclick="cambiarTab('tab-rotacion', this)">
-            <span>Talento Local</span>
-            <span class="nav-pill" th:text="${#lists.size(anilloLocal)}">0</span>
-        </button>
-        <button type="button" class="nav-btn" data-tab="tab-historial" onclick="cambiarTab('tab-historial', this)">
-            <span>Historial y Auditoría</span>
-            <span class="nav-pill" th:text="${#lists.size(historial)}">0</span>
-        </button>
-    </nav>
-
-    <div class="sidebar-footer">
-        <strong>Motor Estructuras de Datos</strong><br>
-        BST &bull; Lista Doble &bull; Lista Circular &bull; Cola FIFO
-    </div>
-</aside>
-
-<!-- CONTENIDO PRINCIPAL -->
-<div class="main-wrapper">
-    <header class="topbar">
-        <div class="topbar-title">
-            <h2>Consola de Programación Musical</h2>
-            <p>Tecnología que organiza la radio y promueve el talento local de Cartagena</p>
-        </div>
-
-        <form th:action="@{/franja}" method="post" class="franja-form">
-            <select name="franja" aria-label="Franja horaria">
-                <option th:selected="${franjaActiva == 'Franja Mañana (08:00 - 12:00)'}">Franja Mañana (08:00 - 12:00)</option>
-                <option th:selected="${franjaActiva == 'Franja Tarde Picotera (14:00 - 18:00)'}">Franja Tarde Picotera (14:00 - 18:00)</option>
-                <option th:selected="${franjaActiva == 'Franja Nocturna Local (19:00 - 23:00)'}">Franja Nocturna Local (19:00 - 23:00)</option>
-            </select>
-            <button type="submit" class="btn-sec">Fijar Franja</button>
-        </form>
     </header>
 
-    <main class="content">
-        <!-- INDICADORES RÁPIDOS -->
-        <section class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-label">Catálogo Indexado</div>
-                <div class="kpi-value" th:text="${#lists.size(catalogo)}">0</div>
-                <div class="kpi-sub">Árbol Binario (BST)</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">En Parrilla Horaria</div>
-                <div class="kpi-value" th:text="${#lists.size(parrilla)}">0</div>
-                <div class="kpi-sub">Lista Doblemente Enlazada</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Anillo Talento Local</div>
-                <div class="kpi-value" th:text="${#lists.size(anilloLocal)}">0</div>
-                <div class="kpi-sub">Lista Circular Equitativa</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Pistas Emitidas</div>
-                <div class="kpi-value" th:text="${#lists.size(historial)}">0</div>
-                <div class="kpi-sub">Guardadas en PostgreSQL</div>
-            </div>
-        </section>
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- VISTA 1: CABINA Y PARRILLA (OPERACIÓN EN VIVO) -->
-        <section id="tab-cabina" class="tab-section active">
-            <div class="spotlight-box" th:if="${siguienteLocal != null}">
-                <div>
-                    <strong>Siguiente turno equitativo en anillo local (Lista Circular)</strong>
-                    <span th:text="${siguienteLocal.artista + ' — ' + siguienteLocal.titulo + ' (' + siguienteLocal.genero + ')'}"></span>
-                </div>
-                <form th:action="@{/rotacion/inyectar}" method="post">
-                    <button type="submit" class="btn-cyan">+ Insertar Turno Local en Parrilla</button>
-                </form>
-            </div>
+        <!-- 2. REPRODUCTOR PRINCIPAL ("EN EMISIÓN AHORA") -->
+        <section class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden relative">
+            <div class="h-1.5 w-full bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-400"></div>
 
-            <div class="two-col">
-                <!-- COLUMNA IZQUIERDA: PARRILLA HORARIA -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Parrilla Horaria Activa</h3>
-                        <span class="badge-ed">Lista Doblemente Enlazada</span>
+            <div class="p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+
+                <!-- Info de la Canción Actual -->
+                <div class="lg:col-span-5 flex items-center gap-4">
+                    <div id="equalizer-box" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-fuchsia-100 via-purple-100 to-cyan-100 border border-purple-200/60 flex flex-col items-center justify-center shrink-0 relative overflow-hidden shadow-inner">
+                        <div class="flex items-end gap-1 h-8 mb-1">
+                            <span class="w-1.5 bg-fuchsia-500 rounded-full eq-bar"></span>
+                            <span class="w-1.5 bg-purple-500 rounded-full eq-bar"></span>
+                            <span class="w-1.5 bg-cyan-500 rounded-full eq-bar"></span>
+                            <span class="w-1.5 bg-pink-500 rounded-full eq-bar"></span>
+                        </div>
+                        <span id="now-playing-node-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/90 text-purple-700">
+                            EN CABINA
+                        </span>
                     </div>
 
-                    <div class="action-bar">
-                        <form th:action="@{/cabina/cargar}" method="post">
-                            <button type="submit">Enviar Parrilla a Cabina &rarr;</button>
-                        </form>
-                        <button type="button" class="btn-ghost" onclick="cambiarTab('tab-catalogo', document.querySelector('[data-tab=tab-catalogo]'))">
-                            + Elegir desde Catálogo
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-fuchsia-600 bg-fuchsia-50 px-2 py-0.5 rounded-md border border-fuchsia-100">
+                                En Emisión Ahora
+                            </span>
+                            <span id="now-playing-genre" class="text-[11px] font-semibold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-100">
+                                Champeta
+                            </span>
+                            <span id="now-playing-local-badge" class="hidden text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                Talento Local
+                            </span>
+                        </div>
+                        <h2 id="now-playing-title" class="text-xl sm:text-2xl font-extrabold text-slate-900 truncate">
+                            Listo para transmitir
+                        </h2>
+                        <p id="now-playing-artist" class="text-sm sm:text-base font-medium text-slate-500 truncate">
+                            Presiona "Siguiente Canción" para emitir al aire
+                        </p>
+                        <div class="mt-2 flex items-center gap-3 text-xs text-slate-400">
+                            <span id="now-playing-plays" class="inline-flex items-center gap-1 text-purple-600 font-semibold">
+                                <i data-lucide="repeat" class="w-3.5 h-3.5"></i> 0 emisiones
+                            </span>
+                            <span>•</span>
+                            <span id="now-playing-id">PostgreSQL Activo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Progreso Simulada -->
+                <div class="lg:col-span-4 flex flex-col justify-center space-y-2 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
+                    <div class="flex justify-between items-center text-xs font-semibold text-slate-500 tabular-nums">
+                        <span id="progress-current">00:45</span>
+                        <span class="text-[11px] text-slate-400 font-medium" id="playback-status-label">Transmisión activa</span>
+                        <span id="progress-total">03:30</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden p-0.5">
+                        <div id="progress-bar" class="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 transition-all duration-300" style="width: 25%"></div>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <button onclick="togglePlayPause()" id="btn-play-pause" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-fuchsia-600 transition-colors cursor-pointer">
+                            <i data-lucide="pause-circle" class="w-4 h-4"></i>
+                            <span>Pausar</span>
+                        </button>
+                        <button onclick="inyectarTurnoLocal()" class="text-xs font-bold text-cyan-700 hover:text-cyan-800 cursor-pointer">
+                            + Turno Local a Parrilla
                         </button>
                     </div>
-
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Orden</th>
-                                    <th>Canción</th>
-                                    <th>Artista</th>
-                                    <th>Controles</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="p, stat : ${parrilla}">
-                                    <td th:text="${stat.count}">1</td>
-                                    <td>
-                                        <strong th:text="${p.titulo}"></strong>
-                                        <span th:if="${p.artistaLocal}" class="badge-local">Local</span>
-                                    </td>
-                                    <td th:text="${p.artista}"></td>
-                                    <td style="display:flex; gap:0.35rem;">
-                                        <form th:action="@{'/parrilla/subir/' + ${p.id}}" method="post">
-                                            <button type="submit" class="btn-sm btn-ghost" title="Subir posición">&uarr;</button>
-                                        </form>
-                                        <form th:action="@{'/parrilla/eliminar/' + ${p.id}}" method="post">
-                                            <button type="submit" class="btn-sm btn-danger" title="Quitar">Quitar</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                <tr th:if="${#lists.isEmpty(parrilla)}">
-                                    <td colspan="4" class="empty-state">
-                                        La parrilla está vacía. Inserta un turno local arriba o elige temas desde el Catálogo Musical.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
 
-                <!-- COLUMNA DERECHA: CABINA EN VIVO -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Cabina de Emisión en Vivo</h3>
-                        <span class="badge-ed">Cola FIFO</span>
-                    </div>
-
-                    <div class="action-bar">
-                        <form th:action="@{/cabina/reproducir}" method="post">
-                            <button type="submit" class="btn-sec">&#9654; Emitir Siguiente Pista y Registrar</button>
-                        </form>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Turno</th>
-                                    <th>Estado</th>
-                                    <th>Canción</th>
-                                    <th>Artista</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="q, stat : ${colaCabina}">
-                                    <td th:text="${stat.count}">1</td>
-                                    <td>
-                                        <span th:if="${stat.first}" class="badge-live">EN CABINA</span>
-                                        <span th:unless="${stat.first}" style="color:var(--text-muted); font-size:0.8rem;">En cola</span>
-                                    </td>
-                                    <td th:text="${q.titulo}"></td>
-                                    <td th:text="${q.artista}"></td>
-                                </tr>
-                                <tr th:if="${#lists.isEmpty(colaCabina)}">
-                                    <td colspan="4" class="empty-state">
-                                        Cabina en espera. Arma tu parrilla a la izquierda y envíala a cabina para transmitir.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- VISTA 2: CATÁLOGO MUSICAL (BST) -->
-        <section id="tab-catalogo" class="tab-section">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Catálogo Musical Ordenado Alfabéticamente</h3>
-                    <span class="badge-ed">Árbol Binario de Búsqueda (BST)</span>
-                </div>
-
-                <!-- BÚSQUEDA RÁPIDA EN BST -->
-                <form th:action="@{/}" method="get" class="search-bar">
-                    <input type="text" name="busqueda" placeholder="Buscar canción por título exacto en el Árbol Binario..." th:value="${terminoBuscado}">
-                    <button type="submit" class="btn-sec">Buscar en BST</button>
-                    <a th:if="${terminoBuscado != null}" th:href="@{/}" class="btn btn-ghost" style="text-decoration:none;">Limpiar</a>
-                </form>
-
-                <div th:if="${terminoBuscado != null}" class="spotlight-box">
-                    <div th:if="${resultadoBusqueda != null}">
-                        <strong>Coincidencia encontrada en O(log n)</strong>
-                        <span th:text="${resultadoBusqueda.titulo + ' — ' + resultadoBusqueda.artista + ' (' + resultadoBusqueda.genero + ')'}"></span>
-                    </div>
-                    <div th:if="${resultadoBusqueda == null}">
-                        <strong>Sin resultados en el árbol</strong>
-                        <span>No existe ninguna pista titulada "<span th:text="${terminoBuscado}"></span>".</span>
-                    </div>
-                    <form th:if="${resultadoBusqueda != null}" th:action="@{'/parrilla/agregar/' + ${resultadoBusqueda.id}}" method="post">
-                        <button type="submit" class="btn-sm">+ Enviar a Parrilla</button>
-                    </form>
-                </div>
-
-                <!-- FORMULARIO DE REGISTRO -->
-                <form th:action="@{/canciones}" method="post" class="form-grid">
-                    <input type="text" name="titulo" placeholder="Título de la canción" required>
-                    <input type="text" name="artista" placeholder="Nombre del artista o agrupación" required>
-                    <select name="genero">
-                        <option>Champeta</option>
-                        <option>Salsa</option>
-                        <option>Vallenato</option>
-                        <option>Cumbia</option>
-                    </select>
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="artistaLocal" value="true"> Talento Local
-                    </label>
-                    <button type="submit">+ Registrar Canción</button>
-                </form>
-
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Título (Recorrido In-Order)</th>
-                                <th>Artista</th>
-                                <th>Género</th>
-                                <th>Reproducciones</th>
-                                <th>Programar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="c : ${catalogo}">
-                                <td><strong th:text="${c.titulo}"></strong></td>
-                                <td>
-                                    <span th:text="${c.artista}"></span>
-                                    <span th:if="${c.artistaLocal}" class="badge-local">Local</span>
-                                </td>
-                                <td th:text="${c.genero}"></td>
-                                <td th:text="${c.vecesReproducida}">0</td>
-                                <td>
-                                    <form th:action="@{'/parrilla/agregar/' + ${c.id}}" method="post">
-                                        <button type="submit" class="btn-sm btn-sec">+ Añadir a Parrilla</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- VISTA 3: ROTACIÓN TALENTO LOCAL (LISTA CIRCULAR) -->
-        <section id="tab-rotacion" class="tab-section">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Anillo de Rotación Equitativa — Artistas de Cartagena</h3>
-                    <span class="badge-ed">Lista Circular</span>
-                </div>
-
-                <div class="spotlight-box" th:if="${siguienteLocal != null}">
+                <!-- Selector de Estructura de Datos & Siguiente Canción -->
+                <div class="lg:col-span-3 flex flex-col gap-2.5">
                     <div>
-                        <strong>Puntero actual del anillo circular</strong>
-                        <span th:text="${siguienteLocal.artista + ' — ' + siguienteLocal.titulo}"></span>
+                        <label for="ds-mode-select" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                            Modo de Rotación
+                        </label>
+                        <div class="relative">
+                            <select id="ds-mode-select" onchange="changeDataStructureMode(this.value)" class="w-full appearance-none bg-purple-50/70 hover:bg-purple-50 border border-purple-200 text-purple-900 text-xs sm:text-sm font-bold rounded-xl px-3.5 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all cursor-pointer">
+                                <option value="CIRCULAR">Lista Circular (Talento Local)</option>
+                                <option value="FIFO">Cola FIFO (Parrilla / Orden)</option>
+                                <option value="PRIORITY_TREE">Árbol BST (Menor Repetición)</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-purple-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        </div>
                     </div>
-                    <form th:action="@{/rotacion/inyectar}" method="post">
-                        <button type="submit" class="btn-cyan">Asignar Turno a Parrilla y Avanzar Anillo</button>
+
+                    <button onclick="playNextSong()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 hover:from-fuchsia-500 hover:to-cyan-500 text-white font-bold text-sm shadow-md shadow-purple-500/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <span>Siguiente Canción</span>
+                        <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- BARRA DE FILTROS Y BÚSQUEDA -->
+        <section class="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div class="relative flex-1 flex gap-2">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="search-input" oninput="renderAll()" placeholder="Filtrar canciones o buscar título exacto en el Árbol BST..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all">
+                </div>
+                <button onclick="buscarExactoEnBST()" class="px-3.5 py-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold shrink-0 cursor-pointer">
+                    Buscar en Árbol
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 ml-1">Género:</span>
+                <div id="genre-filters" class="flex items-center gap-1.5"></div>
+            </div>
+        </section>
+
+        <!-- 3. GESTIÓN DE CANCIONES Y ESTRUCTURAS DE DATOS -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- COLUMNA IZQUIERDA (4 cols): Registro + Ranking de Repeticiones -->
+            <div class="lg:col-span-4 space-y-6">
+
+                <!-- Formulario para Agregar Nueva Canción -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Registrar Canción</h3>
+                                <p class="text-xs text-slate-400">Guarda en PostgreSQL y estructuras</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="add-song-form" onsubmit="handleAddSong(event)" class="space-y-3.5">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Título de la Canción *</label>
+                            <input type="text" id="input-title" required placeholder="Ej. La Espelucá" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-400 transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Artista / Agrupación *</label>
+                            <input type="text" id="input-artist" required placeholder="Ej. Twister El Rey" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-400 transition-all">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 items-end">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Género</label>
+                                <select id="input-genre" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-400 transition-all">
+                                    <option value="Champeta">Champeta</option>
+                                    <option value="Salsa">Salsa</option>
+                                    <option value="Vallenato">Vallenato</option>
+                                    <option value="Cumbia">Cumbia</option>
+                                    <option value="Afrobeats">Afrobeats</option>
+                                    <option value="Pop Latino">Pop Latino</option>
+                                </select>
+                            </div>
+                            <label class="flex items-center gap-2 px-3 py-2 bg-emerald-50/70 border border-emerald-200 rounded-xl cursor-pointer text-xs font-bold text-emerald-800">
+                                <input type="checkbox" id="input-local" checked class="rounded text-emerald-600">
+                                <span>Talento Local</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-fuchsia-600 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                            <i data-lucide="list-plus" class="w-4 h-4"></i>
+                            <span>Guardar en Catálogo</span>
+                        </button>
                     </form>
                 </div>
 
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nodo en Anillo</th>
-                                <th>Artista Local</th>
-                                <th>Canción</th>
-                                <th>Género</th>
-                                <th>Veces Emitida</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="loc, stat : ${anilloLocal}">
-                                <td th:text="${'Nodo #' + stat.count}"></td>
-                                <td><strong th:text="${loc.artista}"></strong></td>
-                                <td th:text="${loc.titulo}"></td>
-                                <td th:text="${loc.genero}"></td>
-                                <td th:text="${loc.vecesReproducida}"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+                <!-- Ranking de Frecuencia / Saturación -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center">
+                                <i data-lucide="network" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Control de Repeticiones</h3>
+                                <p class="text-xs text-slate-400">Equidad musical (Límite ideal: 3)</p>
+                            </div>
+                        </div>
+                    </div>
 
-        <!-- VISTA 4: HISTORIAL PERSISTENTE -->
-        <section id="tab-historial" class="tab-section">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Auditoría de Emisiones y Reporte de Talento Local</h3>
-                    <span class="badge-ed">Base de Datos PostgreSQL</span>
+                    <div id="frequency-ranking-list" class="space-y-2.5 max-h-[340px] overflow-y-auto pr-1"></div>
                 </div>
 
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Fecha y Hora</th>
-                                <th>Franja Horaria</th>
-                                <th>Canción</th>
-                                <th>Artista</th>
-                                <th>Género</th>
-                                <th>Clasificación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="h : ${historial}">
-                                <td th:text="${h.fechaFormateada}"></td>
-                                <td th:text="${h.franjaHoraria}"></td>
-                                <td><strong th:text="${h.tituloCancion}"></strong></td>
-                                <td th:text="${h.artista}"></td>
-                                <td th:text="${h.genero}"></td>
-                                <td>
-                                    <span th:if="${h.artistaLocal}" class="badge-local">Talento Local</span>
-                                    <span th:unless="${h.artistaLocal}" style="color:var(--text-muted);">General</span>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(historial)}">
-                                <td colspan="6" class="empty-state">Aún no hay emisiones registradas en la base de datos.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
-        </section>
+
+            <!-- COLUMNA CENTRAL (5 cols): Catálogo BST / Parrilla Doble / Anillo Circular -->
+            <div class="lg:col-span-5 bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs flex flex-col">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                            <i data-lucide="git-commit-horizontal" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base" id="structure-view-title">Catálogo y Rotación</h3>
+                            <p class="text-xs text-slate-400" id="structure-view-subtitle">Ordenado por Árbol Binario de Búsqueda</p>
+                        </div>
+                    </div>
+
+                    <!-- Mini pestañas de vista central -->
+                    <div class="flex gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                        <button onclick="setCenterView('CATALOGO')" id="btn-view-catalogo" class="px-2.5 py-1 rounded-lg bg-white text-purple-700 shadow-2xs cursor-pointer">Catálogo</button>
+                        <button onclick="setCenterView('PARRILLA')" id="btn-view-parrilla" class="px-2.5 py-1 rounded-lg text-slate-600 cursor-pointer">Parrilla (<span id="count-parrilla">0</span>)</button>
+                        <button onclick="setCenterView('CIRCULAR')" id="btn-view-circular" class="px-2.5 py-1 rounded-lg text-slate-600 cursor-pointer">Anillo Local</button>
+                    </div>
+                </div>
+
+                <!-- Barra de punteros / resumen -->
+                <div class="my-3 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-50/90 via-pink-50/70 to-cyan-50/90 border border-purple-100/80 flex items-center justify-between text-xs font-semibold">
+                    <span class="text-purple-700">Siguiente Local: <span id="pointer-head" class="text-slate-800">---</span></span>
+                    <button onclick="enviarParrillaACabina()" class="text-cyan-700 hover:underline font-bold cursor-pointer">Enviar Parrilla a Cabina &rarr;</button>
+                </div>
+
+                <!-- Lista de Nodos -->
+                <div id="rotation-nodes-container" class="space-y-3 max-h-[620px] overflow-y-auto pr-1 py-1"></div>
+            </div>
+
+            <!-- COLUMNA DERECHA (3 cols): Historial de Emisiones (PostgreSQL + LIFO) -->
+            <div class="lg:col-span-3 bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs flex flex-col">
+                <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-fuchsia-100 text-fuchsia-600 flex items-center justify-center">
+                            <i data-lucide="layers" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">Historial de Emisiones</h3>
+                            <p class="text-[11px] text-slate-400">Persistido en PostgreSQL</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-2.5 flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg font-medium">
+                    <span>Últimas canciones emitidas</span>
+                    <span id="log-count-badge" class="font-bold text-fuchsia-600">0 regs</span>
+                </div>
+
+                <div id="movement-log-container" class="space-y-2.5 max-h-[630px] overflow-y-auto pr-1"></div>
+            </div>
+
+        </div>
     </main>
-</div>
 
-<script th:inline="javascript">
-    function cambiarTab(tabId, btn) {
-        document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        if (btn) btn.classList.add('active');
-        localStorage.setItem('picoplay_tab', tabId);
-    }
+    <!-- PIE DE PÁGINA -->
+    <footer class="bg-white border-t border-slate-200/70 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+            <p><strong class="text-slate-600">PicóPlay Radio</strong> • Emisoras Comunitarias de Cartagena de Indias</p>
+            <p>Java Spring Boot • PostgreSQL • Árbol BST • Lista Doble • Lista Circular • Cola FIFO</p>
+        </div>
+    </footer>
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const hayBusqueda = /*[[${terminoBuscado != null}]]*/ false;
-        const tabGuardada = hayBusqueda ? 'tab-catalogo' : (localStorage.getItem('picoplay_tab') || 'tab-cabina');
-        const btn = document.querySelector(`[data-tab="${tabGuardada}"]`);
-        if (btn) cambiarTab(tabGuardada, btn);
-    });
-</script>
+    <script>
+        let appState = {
+            catalogo: [],
+            parrilla: [],
+            anilloLocal: [],
+            siguienteLocal: null,
+            colaCabina: [],
+            historial: [],
+            topArtista: '-',
+            mode: 'CIRCULAR',
+            centerView: 'CATALOGO',
+            selectedGenre: 'Todos',
+            isPlaying: true,
+            progressSeconds: 45
+        };
+
+        async function initApp() {
+            startClock();
+            startPlaybackSimulation();
+            await cargarEstadoDesdeBackend();
+        }
+
+        async function cargarEstadoDesdeBackend() {
+            try {
+                const res = await fetch('/api/estado');
+                const data = await res.json();
+                actualizarEstado(data);
+            } catch (e) {
+                showToast('Error conectando con el servidor Spring Boot', 'rose');
+            }
+        }
+
+        function actualizarEstado(data) {
+            appState.catalogo = data.catalogo || [];
+            appState.parrilla = data.parrilla || [];
+            appState.anilloLocal = data.anilloLocal || [];
+            appState.siguienteLocal = data.siguienteLocal || null;
+            appState.colaCabina = data.colaCabina || [];
+            appState.historial = data.historial || [];
+            appState.topArtista = data.topArtista || '-';
+            renderAll();
+        }
+
+        async function handleAddSong(event) {
+            event.preventDefault();
+            const titulo = document.getElementById('input-title').value.trim();
+            const artista = document.getElementById('input-artist').value.trim();
+            const genero = document.getElementById('input-genre').value;
+            const artistaLocal = document.getElementById('input-local').checked;
+
+            if (!titulo || !artista) return;
+
+            const res = await fetch('/api/canciones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, artista, genero, artistaLocal })
+            });
+            const data = await res.json();
+            actualizarEstado(data);
+            document.getElementById('add-song-form').reset();
+            document.getElementById('input-local').checked = true;
+            showToast(`"${titulo}" guardada en PostgreSQL y en el Árbol BST`, 'emerald');
+        }
+
+        async function buscarExactoEnBST() {
+            const term = document.getElementById('search-input').value.trim();
+            if (!term) {
+                showToast('Escribe el título exacto de la canción para buscar en el BST', 'purple');
+                return;
+            }
+            const res = await fetch(`/api/buscar?titulo=${encodeURIComponent(term)}`);
+            const data = await res.json();
+            if (data.encontrada && data.cancion) {
+                showToast(`Encontrada en BST: "${data.cancion.titulo}" — ${data.cancion.artista}`, 'cyan');
+            } else {
+                showToast(`No se encontró "${term}" en el árbol`, 'rose');
+            }
+        }
+
+        async function agregarAParrilla(id, titulo) {
+            const res = await fetch(`/api/parrilla/agregar/${id}`, { method: 'POST' });
+            actualizarEstado(await res.json());
+            showToast(`"${titulo}" añadida a la Parrilla (Lista Doble)`, 'purple');
+        }
+
+        async function subirEnParrilla(id) {
+            const res = await fetch(`/api/parrilla/subir/${id}`, { method: 'POST' });
+            actualizarEstado(await res.json());
+        }
+
+        async function eliminarDeParrilla(id) {
+            const res = await fetch(`/api/parrilla/eliminar/${id}`, { method: 'POST' });
+            actualizarEstado(await res.json());
+            showToast('Canción retirada de la parrilla', 'rose');
+        }
+
+        async function inyectarTurnoLocal() {
+            const res = await fetch('/api/rotacion/inyectar', { method: 'POST' });
+            actualizarEstado(await res.json());
+            showToast('Turno equitativo de artista local insertado en parrilla', 'cyan');
+        }
+
+        async function enviarParrillaACabina() {
+            if (appState.parrilla.length === 0) {
+                showToast('La parrilla está vacía. Agrega canciones primero.', 'rose');
+                return;
+            }
+            const res = await fetch('/api/cabina/cargar', { method: 'POST' });
+            actualizarEstado(await res.json());
+            showToast('Parrilla enviada a la Cola FIFO de Cabina', 'purple');
+        }
+
+        async function playNextSong() {
+            const res = await fetch(`/api/cabina/siguiente?modo=${appState.mode}`, { method: 'POST' });
+            const data = await res.json();
+            actualizarEstado(data);
+            appState.progressSeconds = 0;
+
+            const ultima = appState.historial[0];
+            if (ultima) {
+                document.getElementById('now-playing-title').textContent = ultima.tituloCancion;
+                document.getElementById('now-playing-artist').textContent = ultima.artista;
+                document.getElementById('now-playing-genre').textContent = ultima.genero;
+                document.getElementById('now-playing-plays').innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Guardada en PostgreSQL`;
+                const badgeLocal = document.getElementById('now-playing-local-badge');
+                if (ultima.artistaLocal) badgeLocal.classList.remove('hidden');
+                else badgeLocal.classList.add('hidden');
+                showToast(`Al aire: "${ultima.tituloCancion}" — ${ultima.artista}`, 'fuchsia');
+                lucide.createIcons();
+            }
+        }
+
+        function changeDataStructureMode(mode) {
+            appState.mode = mode;
+            const nombres = {
+                'CIRCULAR': 'Lista Circular (Rotación Talento Local)',
+                'FIFO': 'Cola FIFO (Parrilla / Orden de llegada)',
+                'PRIORITY_TREE': 'Árbol BST (Prioridad menor repetición)'
+            };
+            showToast(`Modo cambiado a: ${nombres[mode]}`, 'purple');
+        }
+
+        function setCenterView(view) {
+            appState.centerView = view;
+            ['CATALOGO', 'PARRILLA', 'CIRCULAR'].forEach(v => {
+                const btn = document.getElementById(`btn-view-${v.toLowerCase()}`);
+                if (v === view) {
+                    btn.className = 'px-2.5 py-1 rounded-lg bg-white text-purple-700 shadow-2xs cursor-pointer';
+                } else {
+                    btn.className = 'px-2.5 py-1 rounded-lg text-slate-600 cursor-pointer';
+                }
+            });
+            renderCenterList();
+        }
+
+        function setGenreFilter(genre) {
+            appState.selectedGenre = genre;
+            renderAll();
+        }
+
+        function renderAll() {
+            document.getElementById('stat-total-songs').textContent = appState.catalogo.length;
+            document.getElementById('stat-total-plays').textContent = appState.historial.length;
+            document.getElementById('stat-top-artist').textContent = appState.topArtista;
+            document.getElementById('count-parrilla').textContent = appState.parrilla.length;
+            document.getElementById('pointer-head').textContent = appState.siguienteLocal
+                ? `${appState.siguienteLocal.artista} (${appState.siguienteLocal.titulo})`
+                : 'Sin artistas locales';
+
+            // Si hay historial y aún no se ha actualizado el reproductor tras recargar
+            if (appState.historial.length > 0 && document.getElementById('now-playing-title').textContent === 'Listo para transmitir') {
+                const ultima = appState.historial[0];
+                document.getElementById('now-playing-title').textContent = ultima.tituloCancion;
+                document.getElementById('now-playing-artist').textContent = ultima.artista;
+                document.getElementById('now-playing-genre').textContent = ultima.genero;
+                const badgeLocal = document.getElementById('now-playing-local-badge');
+                if (ultima.artistaLocal) badgeLocal.classList.remove('hidden');
+            }
+
+            renderGenreFilters();
+            renderCenterList();
+            renderFrequencyRanking();
+            renderHistoryLog();
+            lucide.createIcons();
+        }
+
+        function renderGenreFilters() {
+            const genres = ['Todos', 'Champeta', 'Salsa', 'Vallenato', 'Cumbia', 'Afrobeats', 'Pop Latino'];
+            const container = document.getElementById('genre-filters');
+            container.innerHTML = genres.map(g => {
+                const active = appState.selectedGenre === g;
+                return `<button onclick="setGenreFilter('${g}')" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                    active ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }">${g}</button>`;
+            }).join('');
+        }
+
+        function renderCenterList() {
+            const container = document.getElementById('rotation-nodes-container');
+            const titleEl = document.getElementById('structure-view-title');
+            const subEl = document.getElementById('structure-view-subtitle');
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+
+            if (appState.centerView === 'CATALOGO') {
+                titleEl.textContent = 'Catálogo Musical (Árbol BST)';
+                subEl.textContent = 'Recorrido In-Order alfabético • Clic para enviar a parrilla';
+
+                const filtradas = appState.catalogo.filter(c => {
+                    const matchGenre = appState.selectedGenre === 'Todos' || c.genero === appState.selectedGenre;
+                    const matchText = !search || c.titulo.toLowerCase().includes(search) || c.artista.toLowerCase().includes(search);
+                    return matchGenre && matchText;
+                });
+
+                if (filtradas.length === 0) {
+                    container.innerHTML = `<p class="text-center text-sm text-slate-400 py-8">No hay canciones que coincidan con el filtro.</p>`;
+                    return;
+                }
+
+                container.innerHTML = filtradas.map((c, idx) => `
+                    <div class="p-3.5 rounded-2xl border border-slate-200/80 hover:border-purple-300 bg-slate-50/50 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-purple-600">#${idx + 1}</span>
+                                <h4 class="font-bold text-slate-800 text-sm truncate">${c.titulo}</h4>
+                                ${c.artistaLocal ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Local</span>' : ''}
+                            </div>
+                            <p class="text-xs text-slate-500 truncate">${c.artista} • ${c.genero} • ${c.vecesReproducida} emisiones</p>
+                        </div>
+                        <button onclick="agregarAParrilla(${c.id}, '${c.titulo.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shrink-0 cursor-pointer">
+                            + Parrilla
+                        </button>
+                    </div>
+                `).join('');
+            } else if (appState.centerView === 'PARRILLA') {
+                titleEl.textContent = 'Parrilla Horaria (Lista Doblemente Enlazada)';
+                subEl.textContent = 'Reordena hacia arriba o retira canciones antes de pasar a cabina';
+
+                if (appState.parrilla.length === 0) {
+                    container.innerHTML = `<p class="text-center text-sm text-slate-400 py-8">La parrilla está vacía. Agrega canciones desde el catálogo o inserta un turno local.</p>`;
+                    return;
+                }
+
+                container.innerHTML = appState.parrilla.map((c, idx) => `
+                    <div class="p-3.5 rounded-2xl border border-pink-200/80 bg-pink-50/30 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-fuchsia-600">Posición ${idx + 1}</span>
+                                <h4 class="font-bold text-slate-800 text-sm truncate">${c.titulo}</h4>
+                            </div>
+                            <p class="text-xs text-slate-500 truncate">${c.artista} • ${c.genero}</p>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button onclick="subirEnParrilla(${c.id})" class="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer" title="Subir">↑</button>
+                            <button onclick="eliminarDeParrilla(${c.id})" class="px-2.5 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-bold cursor-pointer">Quitar</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                titleEl.textContent = 'Anillo Equitativo (Lista Circular)';
+                subEl.textContent = 'Rotación continua exclusiva para talento local de Cartagena';
+
+                container.innerHTML = appState.anilloLocal.map((c, idx) => `
+                    <div class="p-3.5 rounded-2xl border border-cyan-200/80 bg-cyan-50/30 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-cyan-700">Nodo #${idx + 1}</span>
+                                <h4 class="font-bold text-slate-800 text-sm truncate">${c.artista}</h4>
+                            </div>
+                            <p class="text-xs text-slate-500 truncate">"${c.titulo}" • ${c.genero}</p>
+                        </div>
+                        <span class="text-xs font-bold text-cyan-700 bg-white px-2.5 py-1 rounded-lg border border-cyan-200">${c.vecesReproducida} rep.</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderFrequencyRanking() {
+            const container = document.getElementById('frequency-ranking-list');
+            const ordenadas = [...appState.catalogo].sort((a, b) => b.vecesReproducida - a.vecesReproducida);
+
+            container.innerHTML = ordenadas.map(c => {
+                const saturada = c.vecesReproducida >= 3;
+                return `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl border ${saturada ? 'border-rose-200 bg-rose-50/50' : 'border-slate-100 bg-slate-50/60'}">
+                        <div class="min-w-0 pr-2">
+                            <p class="text-xs font-bold text-slate-800 truncate">${c.titulo}</p>
+                            <p class="text-[11px] text-slate-500 truncate">${c.artista}</p>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-md shrink-0 ${saturada ? 'bg-rose-100 text-rose-700' : 'bg-purple-100 text-purple-700'}">
+                            ${c.vecesReproducida} rep.
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderHistoryLog() {
+            const container = document.getElementById('movement-log-container');
+            document.getElementById('log-count-badge').textContent = `${appState.historial.length} regs`;
+
+            if (appState.historial.length === 0) {
+                container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">Aún no hay canciones emitidas al aire.</p>`;
+                return;
+            }
+
+            container.innerHTML = appState.historial.map(h => `
+                <div class="p-3 rounded-xl border border-slate-100 bg-slate-50/70 space-y-1">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="font-bold text-fuchsia-600">${h.genero}</span>
+                        <span class="text-slate-400">${h.fechaFormateada || ''}</span>
+                    </div>
+                    <p class="text-xs font-bold text-slate-800 truncate">${h.tituloCancion}</p>
+                    <div class="flex items-center justify-between text-[11px] text-slate-500">
+                        <span class="truncate">${h.artista}</span>
+                        ${h.artistaLocal ? '<span class="text-emerald-600 font-bold">Local</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function togglePlayPause() {
+            appState.isPlaying = !appState.isPlaying;
+            const box = document.getElementById('equalizer-box');
+            const btn = document.getElementById('btn-play-pause');
+            const label = document.getElementById('playback-status-label');
+            if (appState.isPlaying) {
+                box.classList.remove('paused');
+                label.textContent = 'Transmisión activa';
+                btn.innerHTML = `<i data-lucide="pause-circle" class="w-4 h-4"></i><span>Pausar</span>`;
+            } else {
+                box.classList.add('paused');
+                label.textContent = 'En pausa';
+                btn.innerHTML = `<i data-lucide="play-circle" class="w-4 h-4"></i><span>Reanudar</span>`;
+            }
+            lucide.createIcons();
+        }
+
+        function startPlaybackSimulation() {
+            setInterval(() => {
+                if (!appState.isPlaying) return;
+                appState.progressSeconds = (appState.progressSeconds + 1) % 210;
+                const mins = String(Math.floor(appState.progressSeconds / 60)).padStart(2, '0');
+                const secs = String(appState.progressSeconds % 60).padStart(2, '0');
+                document.getElementById('progress-current').textContent = `${mins}:${secs}`;
+                document.getElementById('progress-bar').style.width = `${Math.round((appState.progressSeconds / 210) * 100)}%`;
+            }, 1000);
+        }
+
+        function startClock() {
+            const update = () => {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('es-CO', { hour12: false });
+                const dateStr = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+                document.getElementById('clock-desktop').textContent = timeStr;
+                document.getElementById('clock-mobile').textContent = timeStr;
+                document.getElementById('date-desktop').textContent = dateStr;
+            };
+            update();
+            setInterval(update, 1000);
+        }
+
+        function showToast(message, color = 'purple') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-lg border-l-4 border-${color}-400 transition-opacity duration-300`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
 </body>
 </html>
