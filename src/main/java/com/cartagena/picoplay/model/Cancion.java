@@ -22,14 +22,18 @@ public class Cancion {
     private String artista;
 
     @Column(nullable = false)
-    private String genero; // Champeta, Salsa, Vallenato, etc.
+    private String genero;
 
     @Column(nullable = false)
-    private boolean artistaLocal; // true = talento emergente de Cartagena
+    private boolean artistaLocal;
 
-    private int vecesReproducida;
+    @Column(nullable = false)
+    private int vecesReproducida = 0;
 
-    public Cancion() {}
+    private String rutaAudio;
+
+    public Cancion() {
+    }
 
     public Cancion(String titulo, String artista, String genero, boolean artistaLocal) {
         this.titulo = titulo;
@@ -39,16 +43,59 @@ public class Cancion {
         this.vecesReproducida = 0;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getTitulo() { return titulo; }
-    public void setTitulo(String titulo) { this.titulo = titulo; }
-    public String getArtista() { return artista; }
-    public void setArtista(String artista) { this.artista = artista; }
-    public String getGenero() { return genero; }
-    public void setGenero(String genero) { this.genero = genero; }
-    public boolean isArtistaLocal() { return artistaLocal; }
-    public void setArtistaLocal(boolean artistaLocal) { this.artistaLocal = artistaLocal; }
-    public int getVecesReproducida() { return vecesReproducida; }
-    public void setVecesReproducida(int vecesReproducida) { this.vecesReproducida = vecesReproducida; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public String getArtista() {
+        return artista;
+    }
+
+    public void setArtista(String artista) {
+        this.artista = artista;
+    }
+
+    public String getGenero() {
+        return genero;
+    }
+
+    public void setGenero(String genero) {
+        this.genero = genero;
+    }
+
+    public boolean isArtistaLocal() {
+        return artistaLocal;
+    }
+
+    public void setArtistaLocal(boolean artistaLocal) {
+        this.artistaLocal = artistaLocal;
+    }
+
+    public int getVecesReproducida() {
+        return vecesReproducida;
+    }
+
+    public void setVecesReproducida(int vecesReproducida) {
+        this.vecesReproducida = vecesReproducida;
+    }
+
+    public String getRutaAudio() {
+        return rutaAudio;
+    }
+
+    public void setRutaAudio(String rutaAudio) {
+        this.rutaAudio = rutaAudio;
+    }
 }

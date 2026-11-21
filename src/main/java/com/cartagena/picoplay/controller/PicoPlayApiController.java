@@ -1,7 +1,11 @@
 package com.cartagena.picoplay.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.cartagena.picoplay.model.Cancion;
 import com.cartagena.picoplay.model.HistorialReproduccion;
@@ -46,7 +51,6 @@ public class PicoPlayApiController {
         respuesta.put("siguienteLocal", radioService.verSiguienteArtistaLocal());
         respuesta.put("colaCabina", radioService.obtenerColaCabina());
         respuesta.put("historial", historial);
-        respuesta.put("franjaActiva", radioService.getFranjaActiva());
         respuesta.put("totalEmisiones", historial.size());
         respuesta.put("topArtista", topArtista);
         return respuesta;
@@ -57,7 +61,7 @@ public class PicoPlayApiController {
         String titulo = String.valueOf(payload.getOrDefault("titulo", "")).trim();
         String artista = String.valueOf(payload.getOrDefault("artista", "")).trim();
         String genero = String.valueOf(payload.getOrDefault("genero", "Champeta")).trim();
-        boolean artistaLocal = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("artistaLocal", false)));
+        boolean artistaLocal = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("artistaLocal", true)));
 
         if (!titulo.isEmpty() && !artista.isEmpty()) {
             radioService.registrarCancion(titulo, artista, genero, artistaLocal);
@@ -65,13 +69,32 @@ public class PicoPlayApiController {
         return obtenerEstadoCompleto();
     }
 
-    @GetMapping("/buscar")
-    public Map<String, Object> buscarEnBST(@RequestParam String titulo) {
-        Cancion encontrada = radioService.buscarEnBST(titulo);
-        Map<String, Object> res = new HashMap<>();
-        res.put("encontrada", encontrada != null);
-        res.put("cancion", encontrada);
-        return res;
+    @PostMapping("/canciones/upload")
+    public Map<String, Object> crearCancionConAudio(
+            @RequestParam String titulo,
+            @RequestParam String artista,
+            @RequestParam String genero,
+            @RequestParam(defaultValue = "true") boolean artistaLocal,
+            @RequestParam(required = false) MultipartFile archivoAudio
+    ) throws IOException {
+        String rutaPublica = null;
+        if (archivoAudio != null && !archivoAudio.isEmpty()) {
+            Path carpeta = Paths.get("uploads/audio");
+            Files.createDirectories(carpeta);
+            String original = archivoAudio.getOriginalFilename() != null ? archivoAudio.getOriginalFilename() : "audio.mp3";
+            String nombreLimpio = System.currentTimeMillis() + "_" + original.replaceAll("[^a-zA-Z0-9._-]", "_");
+            Path destino = carpeta.resolve(nombreLimpio);
+            Files.copy(archivoAudio.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
+            rutaPublica = "/audio/" + nombreLimpio;
+        }
+
+        if (!titulo.trim().isEmpty() && !artista.trim().isEmpty()) {
+            Cancion creada = radioService.registrarCancion(titulo.trim(), artista.trim(), genero.trim(), artistaLocal);
+            if (rutaPublica != null && creada != null && creada.getId() != null) {
+                radioService.actualizarRutaAudio(creada.getId(), rutaPublica);
+            }
+        }
+        return obtenerEstadoCompleto();
     }
 
     @PostMapping("/parrilla/agregar/{id}")
@@ -80,33 +103,8 @@ public class PicoPlayApiController {
         return obtenerEstadoCompleto();
     }
 
-    @PostMapping("/parrilla/subir/{id}")
-    public Map<String, Object> subirParrilla(@PathVariable Long id) {
-        radioService.subirEnParrilla(id);
-        return obtenerEstadoCompleto();
-    }
-
-    @PostMapping("/parrilla/eliminar/{id}")
-    public Map<String, Object> eliminarParrilla(@PathVariable Long id) {
-        radioService.eliminarDeParrilla(id);
-        return obtenerEstadoCompleto();
-    }
-
-    @PostMapping("/rotacion/inyectar")
-    public Map<String, Object> inyectarTurnoLocal() {
-        radioService.inyectarRotacionLocalAParrilla();
-        return obtenerEstadoCompleto();
-    }
-
-    @PostMapping("/cabina/cargar")
-    public Map<String, Object> cargarCabina() {
-        radioService.enviarParrillaACabina();
-        return obtenerEstadoCompleto();
-    }
-
     @PostMapping("/cabina/siguiente")
     public Map<String, Object> reproducirSiguiente(@RequestParam(defaultValue = "CIRCULAR") String modo) {
-        // Si la cola de cabina está vacía, despacha automáticamente según la estructura seleccionada
         if (radioService.obtenerColaCabina().isEmpty()) {
             if (!radioService.obtenerParrilla().isEmpty()) {
                 radioService.enviarParrillaACabina();

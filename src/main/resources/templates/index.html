@@ -1,4 +1,3 @@
-cat << 'EOF' > src/main/resources/templates/index.html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9,9 +8,9 @@ cat << 'EOF' > src/main/resources/templates/index.html
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -25,8 +24,8 @@ cat << 'EOF' > src/main/resources/templates/index.html
     <style>
         h1, h2, h3, h4, .font-editorial { font-family: 'Fraunces', serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; border-radius: 8px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #64748b66; border-radius: 8px; }
         @keyframes equalizer {
             0%, 100% { height: 25%; }
             50% { height: 100%; }
@@ -36,93 +35,76 @@ cat << 'EOF' > src/main/resources/templates/index.html
         .eq-bar:nth-child(3) { animation-delay: 0.4s; }
         .eq-bar:nth-child(4) { animation-delay: 0.1s; }
         .paused .eq-bar { animation-play-state: paused; height: 35%; }
-        .node-connector::after {
-            content: '';
-            position: absolute;
-            left: 24px;
-            bottom: -14px;
-            width: 2px;
-            height: 14px;
-            background: linear-gradient(to bottom, #d8b4fe, #67e8f9);
-            z-index: 0;
-        }
-        .node-item:last-child .node-connector::after { display: none; }
     </style>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('picoplay_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-fuchsia-200 selection:text-fuchsia-900">
+<body class="bg-slate-50 dark:bg-[#151a24] text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-fuchsia-300/40 selection:text-fuchsia-900 dark:selection:text-fuchsia-100 transition-colors duration-200">
 
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+    <!-- Input oculto para adjuntar o cambiar audio a cualquier canción guardada -->
+    <input type="file" id="attach-audio-picker" accept="audio/*" class="hidden" onchange="handleAttachAudioFile(event)">
+
     <!-- 1. ENCABEZADO -->
-    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
+    <header class="bg-white/95 dark:bg-[#1c2333]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-[#2a3449] sticky top-0 z-30 shadow-2xs transition-colors">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3.5">
-                        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-500 p-0.5 shadow-md shadow-fuchsia-500/20">
-                            <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-                                <i data-lucide="radio" class="w-6 h-6 text-fuchsia-600"></i>
-                            </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-fuchsia-500/20">
+                            ((•))
                         </div>
                         <div>
-                            <div class="flex items-center gap-2.5 flex-wrap">
-                                <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 dark:from-fuchsia-400 dark:via-purple-400 dark:to-cyan-300 bg-clip-text text-transparent">
                                     PicóPlay Radio
                                 </h1>
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200">
-                                    <span class="relative flex h-2 w-2">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
-                                    </span>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60">
+                                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
                                     AL AIRE
                                 </span>
-                                <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-100">
-                                    Sello Ingeniera • CTG
-                                </span>
                             </div>
-                            <p class="text-xs text-slate-500 font-medium">Programación comunitaria con criterio técnico • Cartagena de Indias</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Programación comunitaria • Cartagena de Indias</p>
                         </div>
                     </div>
-                    <div class="lg:hidden text-right">
-                        <div id="clock-mobile" class="text-sm font-bold text-slate-700 tabular-nums">00:00:00</div>
-                        <div class="text-[11px] text-slate-400">Cabina Local</div>
+
+                    <div class="flex items-center gap-2 lg:hidden">
+                        <button onclick="toggleTheme()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-[#252e42] text-xs font-bold cursor-pointer">
+                            Tema
+                        </button>
+                        <div id="clock-mobile" class="text-sm font-bold text-slate-700 dark:text-slate-200 tabular-nums">00:00:00</div>
                     </div>
                 </div>
 
-                <!-- Estadísticas Rápidas & Reloj -->
-                <div class="grid grid-cols-3 sm:flex sm:items-center gap-2 sm:gap-4">
-                    <div class="bg-purple-50/80 border border-purple-100 rounded-xl px-3 py-2 flex items-center gap-2.5">
-                        <div class="p-1.5 bg-purple-100 text-purple-600 rounded-lg hidden sm:block">
-                            <i data-lucide="disc-3" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-purple-600/80 uppercase tracking-wider">En Rotación</p>
-                            <p id="stat-total-songs" class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">0</p>
-                        </div>
+                <div class="grid grid-cols-3 sm:flex sm:items-center gap-2 sm:gap-3.5">
+                    <div class="bg-purple-50/80 dark:bg-purple-950/35 border border-purple-100 dark:border-purple-800/40 rounded-xl px-3 py-2">
+                        <p class="text-[11px] font-semibold text-purple-600/80 dark:text-purple-300/80 uppercase">Guardadas</p>
+                        <p id="stat-saved-count" class="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100 leading-tight">0</p>
                     </div>
 
-                    <div class="bg-cyan-50/80 border border-cyan-100 rounded-xl px-3 py-2 flex items-center gap-2.5">
-                        <div class="p-1.5 bg-cyan-100 text-cyan-600 rounded-lg hidden sm:block">
-                            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-cyan-700/80 uppercase tracking-wider">Emisiones Hoy</p>
-                            <p id="stat-total-plays" class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">0</p>
-                        </div>
+                    <div class="bg-cyan-50/80 dark:bg-cyan-950/35 border border-cyan-100 dark:border-cyan-800/40 rounded-xl px-3 py-2">
+                        <p class="text-[11px] font-semibold text-cyan-700/80 dark:text-cyan-300/80 uppercase">En Cola</p>
+                        <p id="stat-queue-count" class="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100 leading-tight">0</p>
                     </div>
 
-                    <div class="bg-pink-50/80 border border-pink-100 rounded-xl px-3 py-2 flex items-center gap-2.5">
-                        <div class="p-1.5 bg-pink-100 text-pink-600 rounded-lg hidden sm:block">
-                            <i data-lucide="crown" class="w-4 h-4"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-[11px] font-semibold text-pink-600/80 uppercase tracking-wider">Top Artista</p>
-                            <p id="stat-top-artist" class="text-sm sm:text-base font-extrabold text-slate-800 truncate max-w-[110px] sm:max-w-[140px] leading-tight">-</p>
-                        </div>
+                    <div class="bg-pink-50/80 dark:bg-pink-950/35 border border-pink-100 dark:border-pink-800/40 rounded-xl px-3 py-2">
+                        <p class="text-[11px] font-semibold text-pink-600/80 dark:text-pink-300/80 uppercase">Siguiente</p>
+                        <p id="stat-next-short" class="text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate max-w-[120px] leading-tight">-</p>
                     </div>
 
-                    <div class="hidden lg:flex flex-col items-end pl-3 border-l border-slate-200">
-                        <span id="clock-desktop" class="text-lg font-bold text-slate-800 tracking-tight tabular-nums">00:00:00</span>
+                    <button onclick="toggleTheme()" id="btn-theme-toggle" class="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-[#252e42] dark:hover:bg-[#2d3850] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-[#33405c] text-xs font-bold transition-colors cursor-pointer">
+                        <span id="theme-label">Modo Oscuro</span>
+                    </button>
+
+                    <div class="hidden lg:flex flex-col items-end pl-3 border-l border-slate-200 dark:border-[#2a3449]">
+                        <span id="clock-desktop" class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight tabular-nums">00:00:00</span>
                         <span id="date-desktop" class="text-xs text-slate-400 font-medium">Cargando fecha...</span>
                     </div>
                 </div>
@@ -133,143 +115,124 @@ cat << 'EOF' > src/main/resources/templates/index.html
     <!-- CONTENIDO PRINCIPAL -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- 2. REPRODUCTOR PRINCIPAL ("EN EMISIÓN AHORA") -->
-        <section class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden relative">
+        <!-- 2. REPRODUCTOR PRINCIPAL + PRÓXIMA CANCIÓN -->
+        <section class="bg-white dark:bg-[#1c2333] rounded-3xl border border-slate-200/80 dark:border-[#2a3449] shadow-sm overflow-hidden transition-colors">
             <div class="h-1.5 w-full bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-400"></div>
             <div class="p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
 
-                <div class="lg:col-span-5 flex items-center gap-4">
-                    <div id="equalizer-box" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-fuchsia-100 via-purple-100 to-cyan-100 border border-purple-200/60 flex flex-col items-center justify-center shrink-0 relative overflow-hidden shadow-inner">
+                <!-- Sonando ahora -->
+                <div class="lg:col-span-4 flex items-center gap-4">
+                    <div id="equalizer-box" class="paused w-20 h-20 rounded-2xl bg-gradient-to-br from-fuchsia-100 via-purple-100 to-cyan-100 dark:from-fuchsia-950/70 dark:via-purple-950/70 dark:to-cyan-950/70 border border-purple-200/60 dark:border-purple-700/40 flex flex-col items-center justify-center shrink-0">
                         <div class="flex items-end gap-1 h-8 mb-1">
-                            <span class="w-1.5 bg-fuchsia-500 rounded-full eq-bar"></span>
-                            <span class="w-1.5 bg-purple-500 rounded-full eq-bar"></span>
-                            <span class="w-1.5 bg-cyan-500 rounded-full eq-bar"></span>
-                            <span class="w-1.5 bg-pink-500 rounded-full eq-bar"></span>
+                            <span class="w-1.5 bg-fuchsia-500 dark:bg-fuchsia-400 rounded-full eq-bar"></span>
+                            <span class="w-1.5 bg-purple-500 dark:bg-purple-400 rounded-full eq-bar"></span>
+                            <span class="w-1.5 bg-cyan-500 dark:bg-cyan-400 rounded-full eq-bar"></span>
+                            <span class="w-1.5 bg-pink-500 dark:bg-pink-400 rounded-full eq-bar"></span>
                         </div>
-                        <span id="now-playing-node-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/90 text-purple-700 shadow-2xs">
-                            NODO #1
+                        <span id="now-playing-node-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/90 dark:bg-[#151a24]/90 text-purple-700 dark:text-purple-300">
+                            AL AIRE
                         </span>
                     </div>
 
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2 mb-1 flex-wrap">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-fuchsia-600 bg-fuchsia-50 px-2 py-0.5 rounded-md border border-fuchsia-100">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-300 bg-fuchsia-50 dark:bg-fuchsia-950/60 px-2 py-0.5 rounded-md">
                                 En Emisión Ahora
                             </span>
-                            <span id="now-playing-genre" class="text-[11px] font-semibold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-100">
-                                Champeta
-                            </span>
-                            <span id="now-playing-local-badge" class="hidden text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                                Talento Local
+                            <span id="now-playing-genre" class="text-[11px] font-semibold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded-md">
+                                -
                             </span>
                         </div>
-                        <h2 id="now-playing-title" class="text-xl sm:text-2xl font-extrabold text-slate-900 truncate">
-                            Listo para transmitir
+                        <h2 id="now-playing-title" class="text-xl font-extrabold text-slate-900 dark:text-white truncate">
+                            Sin canción sonando
                         </h2>
-                        <p id="now-playing-artist" class="text-sm sm:text-base font-medium text-slate-500 truncate">
-                            Pulsa "Siguiente Canción" para dar turno al aire
+                        <p id="now-playing-artist" class="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
+                            Encola o selecciona una canción y pulsa "Siguiente Canción"
                         </p>
-                        <div class="mt-2 flex items-center gap-3 text-xs text-slate-400">
-                            <span id="now-playing-plays" class="inline-flex items-center gap-1 text-purple-600 font-semibold">
-                                <i data-lucide="repeat" class="w-3.5 h-3.5"></i> Trazabilidad activa
+                    </div>
+                </div>
+
+                <!-- Siguiente canción que viene + Reproductor HTML5 -->
+                <div class="lg:col-span-5 flex flex-col justify-center space-y-3 bg-slate-50/90 dark:bg-[#151a24]/80 p-4 rounded-2xl border border-slate-100 dark:border-[#2a3449]">
+                    <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/70 dark:border-[#2a3449]">
+                        <div class="min-w-0">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 block">
+                                Siguiente en venir
                             </span>
-                            <span>•</span>
-                            <span id="now-playing-id">ID: N-101</span>
+                            <p id="up-next-title" class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                                No hay canción siguiente en la cola
+                            </p>
+                            <p id="up-next-artist" class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                Encola temas desde el repertorio o el formulario
+                            </p>
                         </div>
+                        <span id="up-next-badge" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-cyan-100/80 dark:bg-cyan-950/70 text-cyan-800 dark:text-cyan-300 shrink-0">
+                            PRÓXIMA
+                        </span>
+                    </div>
+
+                    <audio id="audio-player" controls class="w-full h-9 rounded-lg"></audio>
+
+                    <div class="flex justify-between items-center text-[11px] text-slate-400">
+                        <span id="playback-status-label">Listo para reproducir</span>
+                        <span id="progress-counter" class="tabular-nums">00:00 / 00:00</span>
                     </div>
                 </div>
 
-                <!-- Barra de Progreso -->
-                <div class="lg:col-span-4 flex flex-col justify-center space-y-2 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
-                    <div class="flex justify-between items-center text-xs font-semibold text-slate-500 tabular-nums">
-                        <span id="progress-current">01:15</span>
-                        <span class="text-[11px] text-slate-400 font-medium" id="playback-status-label">Reproduciendo en vivo</span>
-                        <span id="progress-total">03:42</span>
-                    </div>
-                    <div class="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden p-0.5">
-                        <div id="progress-bar" class="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 transition-all duration-300" style="width: 35%"></div>
-                    </div>
-                    <div class="flex items-center justify-between pt-1">
-                        <button onclick="togglePlayPause()" id="btn-play-pause" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-fuchsia-600 transition-colors cursor-pointer">
-                            <i data-lucide="pause-circle" class="w-4 h-4"></i>
-                            <span>Pausar Simulación</span>
-                        </button>
-                        <span class="text-[11px] text-slate-400">Avance automático activo</span>
-                    </div>
-                </div>
-
-                <!-- Selector de Estructura de Datos & Siguiente Canción -->
+                <!-- Modo de estructura + Botón Siguiente Canción -->
                 <div class="lg:col-span-3 flex flex-col gap-2.5">
                     <div>
                         <label for="ds-mode-select" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                            Estructura de Despacho Activa
+                            Estructura de Despacho
                         </label>
-                        <div class="relative">
-                            <select id="ds-mode-select" onchange="changeDataStructureMode(this.value)" class="w-full appearance-none bg-purple-50/70 hover:bg-purple-50 border border-purple-200 text-purple-900 text-xs sm:text-sm font-bold rounded-xl px-3.5 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all cursor-pointer">
-                                <option value="CIRCULAR">Lista Circular (Rotación Local)</option>
-                                <option value="FIFO">Cola FIFO (Orden de Parrilla)</option>
-                                <option value="PRIORITY_TREE">Árbol Prioridad (Menor Repetición)</option>
-                            </select>
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-purple-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                        </div>
+                        <select id="ds-mode-select" onchange="changeDataStructureMode(this.value)" class="w-full bg-purple-50/70 dark:bg-[#252e42] border border-purple-200 dark:border-purple-800/50 text-purple-900 dark:text-purple-200 text-xs sm:text-sm font-bold rounded-xl px-3.5 py-2.5 cursor-pointer">
+                            <option value="FIFO">Cola FIFO (Orden de Cola)</option>
+                            <option value="CIRCULAR">Lista Circular (Rotación)</option>
+                            <option value="PRIORITY_TREE">Prioridad (Menor Repetición)</option>
+                        </select>
+                        <p id="mode-rule-description" class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                            Sale la primera en llegar y se retira de la cola.
+                        </p>
                     </div>
 
-                    <button onclick="playNextSong()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 hover:from-fuchsia-500 hover:to-cyan-500 text-white font-bold text-sm shadow-md shadow-purple-500/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer">
-                        <span>Siguiente Canción</span>
-                        <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                    <button onclick="playNextSong()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 hover:from-fuchsia-500 hover:to-cyan-500 text-white font-bold text-sm shadow-md shadow-purple-500/20 active:scale-[0.99] transition-all cursor-pointer">
+                        Siguiente Canción &#9197;
                     </button>
                 </div>
 
             </div>
         </section>
 
-        <!-- BARRA DE FILTROS Y BÚSQUEDA -->
-        <section class="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div class="relative flex-1">
-                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                <input type="text" id="search-input" oninput="renderAll()" placeholder="Buscar por título de canción, artista o ID de nodo..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all">
-            </div>
-
-            <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 ml-1">Género:</span>
-                <div id="genre-filters" class="flex items-center gap-1.5"></div>
-            </div>
-        </section>
-
-        <!-- 3. GESTIÓN EN 3 COLUMNAS -->
+        <!-- 3. TRES COLUMNAS: FORMULARIO + REPERTORIO GUARDADO, COLA DE ESPERA Y BITÁCORA -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-            <!-- COLUMNA IZQUIERDA (4 cols): Insertar Nodo + Ranking de Frecuencia -->
-            <div class="lg:col-span-4 space-y-6">
-                <div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center">
-                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-slate-800 text-base">Insertar Nodo Musical</h3>
-                                <p class="text-xs text-slate-400">Suma temas nuevos al repertorio</p>
-                            </div>
+            <!-- COLUMNA IZQUIERDA (5 cols): Registrar + Lista de canciones guardadas -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-white dark:bg-[#1c2333] rounded-3xl border border-slate-200/80 dark:border-[#2a3449] p-5 shadow-2xs transition-colors">
+                    <div class="flex items-center justify-between mb-3.5">
+                        <div>
+                            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-base">Registrar Nueva Canción</h3>
+                            <p class="text-xs text-slate-400">Guarda en repertorio y opcionalmente encola con audio</p>
                         </div>
-                        <span class="text-[10px] font-bold px-2 py-1 rounded-md bg-fuchsia-50 text-fuchsia-700">Repertorio</span>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded-md bg-fuchsia-50 dark:bg-fuchsia-950/60 text-fuchsia-700 dark:text-fuchsia-300">Catálogo</span>
                     </div>
 
-                    <form id="add-song-form" onsubmit="handleAddSong(event)" class="space-y-3.5">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Título de la Canción *</label>
-                            <input type="text" id="input-title" required placeholder="Ej. La Espelucá" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-400 transition-all">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Artista / Agrupación *</label>
-                            <input type="text" id="input-artist" required placeholder="Ej. Twister El Rey" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-400 transition-all">
+                    <form id="add-song-form" onsubmit="handleAddSong(event)" class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Título *</label>
+                                <input type="text" id="input-title" required placeholder="Ej. Batman Coleto" class="w-full px-3 py-2 bg-slate-50 dark:bg-[#151a24] border border-slate-200 dark:border-[#2a3449] text-slate-800 dark:text-slate-100 placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-400">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Artista *</label>
+                                <input type="text" id="input-artist" required placeholder="Ej. Hector Nazza, Zaider" class="w-full px-3 py-2 bg-slate-50 dark:bg-[#151a24] border border-slate-200 dark:border-[#2a3449] text-slate-800 dark:text-slate-100 placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-400">
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 items-end">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Género</label>
-                                <select id="input-genre" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-400 transition-all">
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Género</label>
+                                <select id="input-genre" class="w-full px-3 py-2 bg-slate-50 dark:bg-[#151a24] border border-slate-200 dark:border-[#2a3449] text-slate-800 dark:text-slate-100 rounded-xl text-sm">
                                     <option value="Champeta">Champeta</option>
                                     <option value="Salsa">Salsa</option>
                                     <option value="Vallenato">Vallenato</option>
@@ -278,137 +241,159 @@ cat << 'EOF' > src/main/resources/templates/index.html
                                     <option value="Pop Latino">Pop Latino</option>
                                 </select>
                             </div>
-                            <label class="flex items-center gap-2 px-3 py-2 bg-emerald-50/80 border border-emerald-200 rounded-xl cursor-pointer text-xs font-bold text-emerald-800">
+                            <label class="flex items-center gap-2 px-3 py-2 bg-emerald-50/80 dark:bg-emerald-950/45 border border-emerald-200 dark:border-emerald-800/50 rounded-xl cursor-pointer text-xs font-bold text-emerald-800 dark:text-emerald-300">
                                 <input type="checkbox" id="input-local" checked class="rounded text-emerald-600">
                                 <span>Talento Local</span>
                             </label>
                         </div>
 
-                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-fuchsia-600 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer">
-                            <i data-lucide="list-plus" class="w-4 h-4"></i>
-                            <span>Encolar Canción</span>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+                            <div class="flex-1 min-w-0">
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Archivo de Audio (MP3 / WAV / OGG)</label>
+                                <input type="file" id="input-audio" accept="audio/*" class="w-full text-xs text-slate-600 dark:text-slate-300 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-purple-50 dark:file:bg-purple-950/70 file:text-purple-700 dark:file:text-purple-300">
+                            </div>
+                            <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer shrink-0 pt-2 sm:pt-5">
+                                <input type="checkbox" id="input-auto-queue" checked class="rounded text-fuchsia-600">
+                                <span>Encolar al guardar</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" id="btn-submit-song" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 dark:bg-fuchsia-600 hover:bg-fuchsia-600 dark:hover:bg-fuchsia-500 text-white font-bold text-sm transition-colors shadow-sm cursor-pointer">
+                            Guardar Canción
                         </button>
                     </form>
                 </div>
 
-                <div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center">
-                                <i data-lucide="network" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-slate-800 text-base">Ranking de Frecuencia</h3>
-                                <p class="text-xs text-slate-400">Control de saturación (Límite: <span class="font-bold text-rose-500">3</span> rep.)</p>
-                            </div>
+                <!-- Lista de canciones guardadas -->
+                <div class="bg-white dark:bg-[#1c2333] rounded-3xl border border-slate-200/80 dark:border-[#2a3449] p-5 shadow-2xs transition-colors">
+                    <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-[#2a3449] flex-wrap">
+                        <div>
+                            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-base">Canciones Guardadas</h3>
+                            <p class="text-xs text-slate-400">Rango de repeticiones (máx. 3), audio, encolar o eliminar</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="eliminarRepetidasGuardadas()" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 cursor-pointer" title="Elimina canciones con repeticiones >= 2 o duplicados">
+                                Limpiar Repetidas
+                            </button>
+                            <span id="saved-badge" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-fuchsia-50 dark:bg-fuchsia-950/60 text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-200 dark:border-fuchsia-800/50">
+                                0 temas
+                            </span>
                         </div>
                     </div>
 
-                    <div id="frequency-ranking-list" class="space-y-2.5 max-h-[340px] overflow-y-auto pr-1"></div>
+                    <input type="text" id="saved-search-input" oninput="renderSavedSongs()" placeholder="Filtrar canciones guardadas por título o artista..." class="mt-3 w-full px-3 py-2 bg-slate-50 dark:bg-[#151a24] border border-slate-200 dark:border-[#2a3449] text-slate-800 dark:text-slate-100 placeholder-slate-400 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-cyan-400">
+
+                    <div id="saved-songs-container" class="mt-3 space-y-2.5 max-h-[480px] overflow-y-auto pr-1"></div>
                 </div>
             </div>
 
-            <!-- COLUMNA CENTRAL (5 cols): Visualización de Nodos Enlazados -->
-            <div class="lg:col-span-5 bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs flex flex-col">
-                <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-100">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
-                            <i data-lucide="git-commit-horizontal" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-base" id="structure-view-title">Lista Circular Enlazada</h3>
-                            <p class="text-xs text-slate-400" id="structure-view-subtitle">Secuencia enlazada para dar turno parejo</p>
-                        </div>
+            <!-- COLUMNA CENTRAL (4 cols): Cola de canciones encoladas y cuál sigue -->
+            <div class="lg:col-span-4 bg-white dark:bg-[#1c2333] rounded-3xl border border-slate-200/80 dark:border-[#2a3449] p-5 shadow-2xs flex flex-col transition-colors">
+                <div class="flex items-center justify-between gap-2 pb-3.5 border-b border-slate-100 dark:border-[#2a3449] flex-wrap">
+                    <div>
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 text-base">Cola de Canciones Encoladas</h3>
+                        <p id="queue-subtitle" class="text-xs text-slate-400">Orden FIFO: sale la primera en llegar</p>
                     </div>
-
-                    <span id="active-structure-badge" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
-                        ROTACIÓN_CIRCULAR
-                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="eliminarDuplicadosEnCola()" class="text-[11px] font-bold px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 cursor-pointer" title="Quita copias repetidas de la cola">
+                            Quitar Copias
+                        </button>
+                        <span id="queue-badge" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50">
+                            0 en cola
+                        </span>
+                    </div>
                 </div>
 
-                <!-- Punteros HEAD / TAIL -->
-                <div class="my-3 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-50/90 via-pink-50/70 to-cyan-50/90 border border-purple-100/80 flex items-center justify-between text-xs font-semibold">
-                    <span class="text-purple-700 truncate">INICIO: <span id="pointer-head" class="text-slate-700">---</span></span>
-                    <span class="text-slate-400 px-1">⇄</span>
-                    <span class="text-cyan-700 truncate">CIERRE: <span id="pointer-tail" class="text-slate-700">---</span></span>
-                </div>
-
-                <!-- Lista de Nodos -->
-                <div id="rotation-nodes-container" class="space-y-3.5 max-h-[600px] overflow-y-auto pr-1 py-1"></div>
-
-                <!-- Retorno circular -->
-                <div class="mt-4 pt-3 border-t border-dashed border-purple-200 flex items-center justify-center gap-2 text-xs text-purple-600 bg-purple-50/40 py-2 rounded-xl font-medium">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                    <span>Al llegar al último tema, el ciclo vuelve al inicio sin dejar a nadie por fuera</span>
-                </div>
+                <div id="queue-list-container" class="mt-3 space-y-2.5 max-h-[680px] overflow-y-auto pr-1"></div>
             </div>
 
-            <!-- COLUMNA DERECHA (3 cols): Pila de Movimientos / Historial PostgreSQL -->
-            <div class="lg:col-span-3 bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs flex flex-col">
-                <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-fuchsia-100 text-fuchsia-600 flex items-center justify-center">
-                            <i data-lucide="layers" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-sm">Bitácora de Emisión</h3>
-                            <p class="text-[11px] text-slate-400">Registro ordenado en base de datos</p>
-                        </div>
+            <!-- COLUMNA DERECHA (3 cols): Bitácora de canciones ya reproducidas -->
+            <div class="lg:col-span-3 bg-white dark:bg-[#1c2333] rounded-3xl border border-slate-200/80 dark:border-[#2a3449] p-5 shadow-2xs flex flex-col transition-colors">
+                <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-[#2a3449]">
+                    <div>
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Ya Sonaron</h3>
+                        <p class="text-[11px] text-slate-400">Historial de reproducción</p>
                     </div>
+                    <span id="log-count-badge" class="text-xs font-bold text-fuchsia-600 dark:text-fuchsia-400">0</span>
                 </div>
 
-                <div class="my-2.5 flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg font-medium">
-                    <span>Último tema al aire</span>
-                    <span id="log-count-badge" class="font-bold text-fuchsia-600">0 ops</span>
-                </div>
-
-                <div id="movement-log-container" class="space-y-2.5 max-h-[620px] overflow-y-auto pr-1"></div>
+                <div id="movement-log-container" class="mt-3 space-y-2 max-h-[680px] overflow-y-auto pr-1"></div>
             </div>
 
         </div>
     </main>
 
-    <!-- PIE DE PÁGINA CON FIRMA DE INGENIERÍA -->
-    <footer class="bg-white border-t border-slate-200/80 py-4 mt-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-            <p>
-                <strong class="text-slate-800 font-editorial">PicóPlay Radio</strong> • Construido por una mujer ingeniera en formación • Cartagena de Indias
-            </p>
-            <p class="font-medium text-purple-700/80">
-                Ingeniería de sistemas con propósito local • Java, Spring Boot y estructuras de datos
-            </p>
-        </div>
-    </footer>
-
     <script>
+        const audioEl = document.getElementById('audio-player');
+        const MAX_REPETICIONES = 3;
+        let localSeqId = 1;
+        let songIdForAudioUpload = null;
+
         let appState = {
-            catalogo: [], parrilla: [], anilloLocal: [], siguienteLocal: null,
-            colaCabina: [], historial: [], topArtista: '-',
-            mode: 'CIRCULAR', selectedGenre: 'Todos',
-            isPlaying: true, progressSeconds: 75
+            guardadas: [],
+            cola: [],
+            historial: [],
+            actual: null,
+            mode: 'FIFO',
+            indiceCircular: 0
         };
 
-        async function initApp() {
-            startClock();
-            startPlaybackSimulation();
-            await cargarEstadoDesdeBackend();
+        const MODE_META = {
+            FIFO: {
+                rule: 'Sale la primera en llegar y se retira de la cola.',
+                queueSubtitle: 'Orden FIFO: sale la primera en llegar'
+            },
+            CIRCULAR: {
+                rule: 'Rota en ciclo continuo: tras el último tema vuelve al inicio.',
+                queueSubtitle: 'Rotación circular: avanza el puntero y vuelve al inicio'
+            },
+            PRIORITY_TREE: {
+                rule: 'Despacha primero la canción con menor repetición (y prioriza local).',
+                queueSubtitle: 'Árbol de prioridad: menor repetición sale primero'
+            }
+        };
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('picoplay_theme', isDark ? 'dark' : 'light');
+            updateThemeLabel();
+            showToast(isDark ? 'Modo oscuro activado' : 'Modo claro activado', 'purple');
         }
 
-        async function cargarEstadoDesdeBackend() {
+        function updateThemeLabel() {
+            const label = document.getElementById('theme-label');
+            if (label) {
+                label.textContent = document.documentElement.classList.contains('dark') ? 'Modo Claro' : 'Modo Oscuro';
+            }
+        }
+
+        async function initApp() {
+            updateThemeLabel();
+            startClock();
+            await cargarGuardadasDesdeBackend();
+            renderAll();
+        }
+
+        async function cargarGuardadasDesdeBackend() {
             try {
                 const res = await fetch('/api/estado');
+                if (!res.ok) return;
                 const data = await res.json();
-                appState.catalogo = data.catalogo || [];
-                appState.parrilla = data.parrilla || [];
-                appState.anilloLocal = data.anilloLocal || [];
-                appState.siguienteLocal = data.siguienteLocal || null;
-                appState.colaCabina = data.colaCabina || [];
-                appState.historial = data.historial || [];
-                appState.topArtista = data.topArtista || '-';
-                renderAll();
-            } catch (e) {
-                showToast('Error conectando con Spring Boot', 'rose');
-            }
+                if (Array.isArray(data.catalogo) && data.catalogo.length > 0) {
+                    appState.guardadas = data.catalogo.map(c => ({
+                        id: c.id,
+                        titulo: c.titulo,
+                        artista: c.artista,
+                        genero: c.genero || 'Champeta',
+                        artistaLocal: Boolean(c.artistaLocal),
+                        rutaAudio: c.rutaAudio || null,
+                        nombreArchivo: c.rutaAudio ? c.rutaAudio.split('/').pop() : null,
+                        vecesReproducida: c.vecesReproducida || 0
+                    }));
+                    const maxId = appState.guardadas.reduce((m, item) => Math.max(m, Number(item.id) || 0), 0);
+                    localSeqId = Math.max(localSeqId, maxId + 1);
+                }
+            } catch (_) {}
         }
 
         async function handleAddSong(event) {
@@ -417,181 +402,445 @@ cat << 'EOF' > src/main/resources/templates/index.html
             const artista = document.getElementById('input-artist').value.trim();
             const genero = document.getElementById('input-genre').value;
             const artistaLocal = document.getElementById('input-local').checked;
+            const encolarAlGuardar = document.getElementById('input-auto-queue').checked;
+            const archivoInput = document.getElementById('input-audio');
+            const archivo = archivoInput && archivoInput.files ? archivoInput.files[0] : null;
+
             if (!titulo || !artista) return;
 
-            const res = await fetch('/api/canciones', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, artista, genero, artistaLocal })
-            });
-            const data = await res.json();
-            appState.catalogo = data.catalogo || [];
-            appState.anilloLocal = data.anilloLocal || [];
-            appState.siguienteLocal = data.siguienteLocal || null;
-            renderAll();
+            let rutaAudio = archivo ? URL.createObjectURL(archivo) : null;
+            let idCreado = localSeqId++;
+
+            if (archivo) {
+                try {
+                    const formData = new FormData();
+                    formData.append('titulo', titulo);
+                    formData.append('artista', artista);
+                    formData.append('genero', genero);
+                    formData.append('artistaLocal', artistaLocal);
+                    formData.append('archivoAudio', archivo);
+                    const res = await fetch('/api/canciones/upload', { method: 'POST', body: formData });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const encontrada = (data.catalogo || []).find(c => c.titulo === titulo && c.artista === artista);
+                        if (encontrada) {
+                            idCreado = encontrada.id;
+                            if (encontrada.rutaAudio) rutaAudio = encontrada.rutaAudio;
+                        }
+                    }
+                } catch (_) {}
+            } else {
+                try {
+                    const res = await fetch('/api/canciones', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ titulo, artista, genero, artistaLocal })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const encontrada = (data.catalogo || []).find(c => c.titulo === titulo && c.artista === artista);
+                        if (encontrada) idCreado = encontrada.id;
+                    }
+                } catch (_) {}
+            }
+
+            const cancionGuardada = {
+                id: idCreado,
+                titulo,
+                artista,
+                genero,
+                artistaLocal,
+                rutaAudio,
+                nombreArchivo: archivo ? archivo.name : null,
+                vecesReproducida: 0
+            };
+
+            appState.guardadas.unshift(cancionGuardada);
+            if (encolarAlGuardar) {
+                appState.cola.push(cancionGuardada);
+            }
+
             document.getElementById('add-song-form').reset();
             document.getElementById('input-local').checked = true;
-            showToast(`"${titulo}" integrada al repertorio y guardada`, 'emerald');
+            document.getElementById('input-auto-queue').checked = true;
+
+            renderAll();
+            showToast(
+                encolarAlGuardar
+                    ? `"${titulo}" guardada y encolada (#${appState.cola.length})`
+                    : `"${titulo}" guardada en repertorio`,
+                'emerald'
+            );
         }
 
-        async function agregarAParrilla(id, titulo) {
-            const res = await fetch(`/api/parrilla/agregar/${id}`, { method: 'POST' });
-            const data = await res.json();
-            appState.parrilla = data.parrilla || [];
-            renderAll();
-            showToast(`"${titulo}" sumada a la parrilla`, 'purple');
-        }
+        function eliminarCancionGuardada(id) {
+            const objetivo = appState.guardadas.find(c => c.id === id);
+            if (!objetivo) return;
 
-        async function playNextSong() {
-            const res = await fetch(`/api/cabina/siguiente?modo=${appState.mode}`, { method: 'POST' });
-            const data = await res.json();
-            appState.catalogo = data.catalogo || [];
-            appState.parrilla = data.parrilla || [];
-            appState.anilloLocal = data.anilloLocal || [];
-            appState.siguienteLocal = data.siguienteLocal || null;
-            appState.historial = data.historial || [];
-            appState.topArtista = data.topArtista || '-';
-            appState.progressSeconds = 0;
-            renderAll();
-
-            const ultima = appState.historial[0];
-            if (ultima) {
-                showToast(`Al aire: "${ultima.tituloCancion}" — ${ultima.artista}`, 'fuchsia');
+            appState.guardadas = appState.guardadas.filter(c => c.id !== id);
+            appState.cola = appState.cola.filter(c => c.id !== id);
+            if (appState.cola.length > 0) {
+                appState.indiceCircular = appState.indiceCircular % appState.cola.length;
+            } else {
+                appState.indiceCircular = 0;
             }
+
+            if (appState.actual && appState.actual.id === id) {
+                audioEl.pause();
+                audioEl.removeAttribute('src');
+                audioEl.load();
+                appState.actual = null;
+                document.getElementById('equalizer-box').classList.add('paused');
+                document.getElementById('now-playing-title').textContent = 'Sin canción sonando';
+                document.getElementById('now-playing-artist').textContent = 'La canción en emisión fue eliminada';
+                document.getElementById('now-playing-genre').textContent = '-';
+                document.getElementById('playback-status-label').textContent = 'Listo para reproducir';
+            }
+
+            renderAll();
+            showToast(`"${objetivo.titulo}" eliminada`, 'rose');
+        }
+
+        function eliminarRepetidasGuardadas() {
+            const antes = appState.guardadas.length;
+            const vistos = new Set();
+            const idsAEliminar = new Set();
+
+            appState.guardadas.forEach(c => {
+                const clave = `${(c.titulo || '').trim().toLowerCase()}|${(c.artista || '').trim().toLowerCase()}`;
+                const esDuplicado = vistos.has(clave);
+                const muyRepetida = (c.vecesReproducida || 0) >= 2;
+                vistos.add(clave);
+
+                if (esDuplicado || muyRepetida) {
+                    idsAEliminar.add(c.id);
+                }
+            });
+
+            if (idsAEliminar.size === 0) {
+                showToast('No hay canciones repetidas para eliminar', 'purple');
+                return;
+            }
+
+            appState.guardadas = appState.guardadas.filter(c => !idsAEliminar.has(c.id));
+            appState.cola = appState.cola.filter(c => !idsAEliminar.has(c.id));
+            appState.indiceCircular = appState.cola.length > 0 ? appState.indiceCircular % appState.cola.length : 0;
+            renderAll();
+            showToast(`Se eliminaron ${antes - appState.guardadas.length} canciones repetidas`, 'rose');
+        }
+
+        function eliminarDuplicadosEnCola() {
+            const antes = appState.cola.length;
+            const vistosId = new Set();
+            appState.cola = appState.cola.filter(c => {
+                if (vistosId.has(c.id)) return false;
+                vistosId.add(c.id);
+                return true;
+            });
+            appState.indiceCircular = appState.cola.length > 0 ? appState.indiceCircular % appState.cola.length : 0;
+
+            const eliminadas = antes - appState.cola.length;
+            renderAll();
+            showToast(
+                eliminadas > 0 ? `Se quitaron ${eliminadas} copias repetidas de la cola` : 'No había copias repetidas en la cola',
+                eliminadas > 0 ? 'rose' : 'purple'
+            );
+        }
+
+        function abrirSelectorAudioParaCancion(id) {
+            songIdForAudioUpload = id;
+            const picker = document.getElementById('attach-audio-picker');
+            picker.value = '';
+            picker.click();
+        }
+
+        function handleAttachAudioFile(event) {
+            const archivo = event.target.files && event.target.files[0];
+            if (!archivo || songIdForAudioUpload === null) return;
+
+            const nuevaUrl = URL.createObjectURL(archivo);
+            const cancion = appState.guardadas.find(c => c.id === songIdForAudioUpload);
+            if (cancion) {
+                cancion.rutaAudio = nuevaUrl;
+                cancion.nombreArchivo = archivo.name;
+            }
+            appState.cola.forEach(item => {
+                if (item.id === songIdForAudioUpload) {
+                    item.rutaAudio = nuevaUrl;
+                    item.nombreArchivo = archivo.name;
+                }
+            });
+
+            songIdForAudioUpload = null;
+            renderAll();
+            showToast(`Audio "${archivo.name}" adjuntado a "${cancion ? cancion.titulo : 'canción'}"`, 'emerald');
+        }
+
+        function encolarDesdeGuardadas(id) {
+            const cancion = appState.guardadas.find(c => c.id === id);
+            if (!cancion) return;
+            appState.cola.push(cancion);
+            renderAll();
+            showToast(`"${cancion.titulo}" encolada (#${appState.cola.length})`, 'purple');
+        }
+
+        function repetirCancion(id) {
+            const cancion = appState.guardadas.find(c => c.id === id);
+            if (!cancion) return;
+            appState.cola.unshift(cancion);
+            appState.indiceCircular = 0;
+            renderAll();
+            showToast(`"${cancion.titulo}" lista para repetir de próxima`, 'fuchsia');
+        }
+
+        function compararPrioridad(a, b) {
+            const repA = a.vecesReproducida || 0;
+            const repB = b.vecesReproducida || 0;
+            if (repA !== repB) return repA - repB;
+            // Desempate: talento local primero, luego menor ID
+            if (Boolean(a.artistaLocal) !== Boolean(b.artistaLocal)) {
+                return a.artistaLocal ? -1 : 1;
+            }
+            return (a.id || 0) - (b.id || 0);
+        }
+
+        function obtenerColaOrdenadaPorModo() {
+            if (appState.mode === 'PRIORITY_TREE') {
+                return [...appState.cola].sort(compararPrioridad);
+            }
+            return appState.cola;
+        }
+
+        function verProximaEnCola() {
+            if (!appState.cola || appState.cola.length === 0) return null;
+
+            if (appState.mode === 'PRIORITY_TREE') {
+                return obtenerColaOrdenadaPorModo()[0];
+            }
+
+            if (appState.mode === 'CIRCULAR') {
+                const idx = appState.indiceCircular % appState.cola.length;
+                return appState.cola[idx];
+            }
+
+            // FIFO
+            return appState.cola[0];
+        }
+
+        function despacharSiguienteCancion() {
+            if (!appState.cola || appState.cola.length === 0) return null;
+
+            if (appState.mode === 'FIFO') {
+                // Extrae el frente de la cola (FIFO real)
+                const elegida = appState.cola.shift();
+                appState.indiceCircular = appState.cola.length > 0 ? appState.indiceCircular % appState.cola.length : 0;
+                return elegida;
+            }
+
+            if (appState.mode === 'PRIORITY_TREE') {
+                // Extrae el nodo de mayor prioridad (menor repetición) dentro de la cola
+                const ordenadas = obtenerColaOrdenadaPorModo();
+                const elegida = ordenadas[0];
+                const idxReal = appState.cola.findIndex(item => item === elegida);
+                if (idxReal !== -1) appState.cola.splice(idxReal, 1);
+                appState.indiceCircular = appState.cola.length > 0 ? appState.indiceCircular % appState.cola.length : 0;
+                return elegida;
+            }
+
+            // CIRCULAR: mantiene los elementos en anillo y avanza el puntero circular
+            const idx = appState.indiceCircular % appState.cola.length;
+            const elegida = appState.cola[idx];
+            appState.indiceCircular = (idx + 1) % appState.cola.length;
+            return elegida;
+        }
+
+        function cargarYReproducirAudio(cancion) {
+            audioEl.pause();
+            audioEl.currentTime = 0;
+
+            appState.actual = cancion;
+            cancion.vecesReproducida = (cancion.vecesReproducida || 0) + 1;
+
+            const guardadaRef = appState.guardadas.find(c => c.id === cancion.id);
+            if (guardadaRef && guardadaRef !== cancion) {
+                guardadaRef.vecesReproducida = cancion.vecesReproducida;
+            }
+
+            appState.historial.unshift({
+                id: appState.historial.length + 1,
+                titulo: cancion.titulo,
+                artista: cancion.artista,
+                genero: cancion.genero,
+                modo: appState.mode,
+                repeticion: cancion.vecesReproducida,
+                hora: new Date().toLocaleTimeString('es-CO', { hour12: false })
+            });
+
+            document.getElementById('now-playing-title').textContent = cancion.titulo;
+            document.getElementById('now-playing-artist').textContent = `${cancion.artista} • Repetición ${cancion.vecesReproducida}/${MAX_REPETICIONES}`;
+            document.getElementById('now-playing-genre').textContent = cancion.genero;
+            document.getElementById('now-playing-node-badge').textContent = `#${cancion.id}`;
+
+            if (cancion.rutaAudio) {
+                audioEl.src = cancion.rutaAudio;
+                audioEl.load();
+                audioEl.play().then(() => {
+                    document.getElementById('equalizer-box').classList.remove('paused');
+                    document.getElementById('playback-status-label').textContent = `Reproduciendo: ${cancion.nombreArchivo || cancion.titulo}`;
+                }).catch(() => {
+                    document.getElementById('playback-status-label').textContent = 'Pista cargada — pulsa play en el reproductor';
+                });
+            } else {
+                audioEl.removeAttribute('src');
+                audioEl.load();
+                document.getElementById('equalizer-box').classList.add('paused');
+                document.getElementById('playback-status-label').textContent = 'Sin archivo de audio (usa "Audio" en guardadas para adjuntar)';
+            }
+
+            renderAll();
+            showToast(`Despacho (${appState.mode}): "${cancion.titulo}"`, 'fuchsia');
+        }
+
+        function playNextSong() {
+            const siguiente = despacharSiguienteCancion();
+            if (!siguiente) {
+                showToast('No hay canciones en la cola. Usa "+ Encolar" en Canciones Guardadas.', 'rose');
+                return;
+            }
+            cargarYReproducirAudio(siguiente);
+        }
+
+        function reproducirDeColaDirecto(indexEnVista) {
+            const listaVista = obtenerColaOrdenadaPorModo();
+            const elegida = listaVista[indexEnVista];
+            if (!elegida) return;
+
+            const idxReal = appState.cola.findIndex(item => item === elegida);
+            if (idxReal !== -1) {
+                appState.cola.splice(idxReal, 1);
+                appState.indiceCircular = appState.cola.length > 0 ? appState.indiceCircular % appState.cola.length : 0;
+            }
+            cargarYReproducirAudio(elegida);
+        }
+
+        function quitarDeCola(indexEnVista) {
+            const listaVista = obtenerColaOrdenadaPorModo();
+            const quitada = listaVista[indexEnVista];
+            if (!quitada) return;
+
+            const idxReal = appState.cola.findIndex(item => item === quitada);
+            if (idxReal !== -1) {
+                appState.cola.splice(idxReal, 1);
+                appState.indiceCircular = appState.cola.length > 0 ? appState.indiceCircular % appState.cola.length : 0;
+            }
+            renderAll();
+            showToast(`"${quitada.titulo}" quitada de la cola`, 'purple');
         }
 
         function changeDataStructureMode(mode) {
             appState.mode = mode;
-            const badge = document.getElementById('active-structure-badge');
-            const title = document.getElementById('structure-view-title');
-            if (mode === 'CIRCULAR') {
-                badge.textContent = 'ROTACIÓN_CIRCULAR';
-                title.textContent = 'Lista Circular Enlazada';
-            } else if (mode === 'FIFO') {
-                badge.textContent = 'COLA_FIFO';
-                title.textContent = 'Cola FIFO de Parrilla';
-            } else {
-                badge.textContent = 'ÁRBOL_PRIORIDAD';
-                title.textContent = 'Árbol Prioridad (Menor Uso)';
+            if (mode === 'CIRCULAR' && appState.cola.length > 0) {
+                appState.indiceCircular = appState.indiceCircular % appState.cola.length;
             }
-            renderNodes();
-            showToast(`Modo activo: ${title.textContent}`, 'purple');
-        }
-
-        function setGenreFilter(genre) {
-            appState.selectedGenre = genre;
             renderAll();
+            showToast(`Despacho activo: ${mode}`, 'purple');
         }
 
         function renderAll() {
-            document.getElementById('stat-total-songs').textContent = appState.catalogo.length;
-            document.getElementById('stat-total-plays').textContent = appState.historial.length;
-            document.getElementById('stat-top-artist').textContent = appState.topArtista;
+            const meta = MODE_META[appState.mode] || MODE_META.FIFO;
+            document.getElementById('mode-rule-description').textContent = meta.rule;
+            document.getElementById('queue-subtitle').textContent = meta.queueSubtitle;
 
-            const listaBase = appState.catalogo;
-            if (listaBase.length > 0) {
-                document.getElementById('pointer-head').textContent = `N-${100 + listaBase[0].id} (${listaBase[0].titulo})`;
-                const last = listaBase[listaBase.length - 1];
-                document.getElementById('pointer-tail').textContent = `N-${100 + last.id} (${last.titulo})`;
+            const proxima = verProximaEnCola();
+
+            document.getElementById('stat-saved-count').textContent = appState.guardadas.length;
+            document.getElementById('stat-queue-count').textContent = appState.cola.length;
+            document.getElementById('stat-next-short').textContent = proxima ? proxima.titulo : '-';
+            document.getElementById('saved-badge').textContent = `${appState.guardadas.length} temas`;
+            document.getElementById('queue-badge').textContent = `${appState.cola.length} en cola`;
+            document.getElementById('log-count-badge').textContent = `${appState.historial.length}`;
+
+            if (proxima) {
+                document.getElementById('up-next-title').textContent = proxima.titulo;
+                document.getElementById('up-next-artist').textContent = `${proxima.artista} • ${proxima.genero} • ${proxima.vecesReproducida || 0} rep.`;
+                document.getElementById('up-next-badge').textContent = proxima.rutaAudio ? 'CON AUDIO' : 'SIN AUDIO';
+            } else {
+                document.getElementById('up-next-title').textContent = 'No hay canción siguiente en la cola';
+                document.getElementById('up-next-artist').textContent = 'Encola temas desde el repertorio o el formulario';
+                document.getElementById('up-next-badge').textContent = 'VACÍA';
             }
 
-            const activa = appState.historial[0]
-                ? {
-                    titulo: appState.historial[0].tituloCancion,
-                    artista: appState.historial[0].artista,
-                    genero: appState.historial[0].genero,
-                    local: appState.historial[0].artistaLocal,
-                    id: `N-${100 + appState.historial[0].id}`
-                  }
-                : (listaBase[0] ? {
-                    titulo: listaBase[0].titulo,
-                    artista: listaBase[0].artista,
-                    genero: listaBase[0].genero,
-                    local: listaBase[0].artistaLocal,
-                    id: `N-${100 + listaBase[0].id}`
-                  } : null);
-
-            if (activa) {
-                document.getElementById('now-playing-title').textContent = activa.titulo;
-                document.getElementById('now-playing-artist').textContent = activa.artista;
-                document.getElementById('now-playing-genre').textContent = activa.genero;
-                document.getElementById('now-playing-id').textContent = `ID: ${activa.id}`;
-                document.getElementById('now-playing-node-badge').textContent = activa.id;
-                const badgeLocal = document.getElementById('now-playing-local-badge');
-                if (activa.local) badgeLocal.classList.remove('hidden');
-                else badgeLocal.classList.add('hidden');
-            }
-
-            renderGenreFilters();
-            renderNodes();
-            renderFrequencyRanking();
-            renderHistoryStack();
-            lucide.createIcons();
+            renderSavedSongs();
+            renderQueueList();
+            renderHistoryList();
         }
 
-        function renderGenreFilters() {
-            const genres = ['Todos', 'Champeta', 'Salsa', 'Vallenato', 'Cumbia', 'Afrobeats', 'Pop Latino'];
-            document.getElementById('genre-filters').innerHTML = genres.map(g => {
-                const active = appState.selectedGenre === g;
-                return `<button onclick="setGenreFilter('${g}')" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                    active ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }">${g}</button>`;
-            }).join('');
-        }
+        function renderSavedSongs() {
+            const container = document.getElementById('saved-songs-container');
+            const filterInput = document.getElementById('saved-search-input');
+            const query = filterInput ? filterInput.value.toLowerCase().trim() : '';
 
-        function renderNodes() {
-            const container = document.getElementById('rotation-nodes-container');
-            const search = document.getElementById('search-input').value.toLowerCase().trim();
-
-            let lista = [...appState.catalogo];
-            if (appState.mode === 'PRIORITY_TREE') {
-                lista.sort((a, b) => a.vecesReproducida - b.vecesReproducida);
-            }
-
-            const filtradas = lista.filter(c => {
-                const matchGenre = appState.selectedGenre === 'Todos' || c.genero === appState.selectedGenre;
-                const nodeCode = `n-${100 + c.id}`;
-                const matchText = !search || c.titulo.toLowerCase().includes(search) || c.artista.toLowerCase().includes(search) || nodeCode.includes(search);
-                return matchGenre && matchText;
-            });
+            const filtradas = appState.guardadas.filter(c =>
+                !query ||
+                (c.titulo && c.titulo.toLowerCase().includes(query)) ||
+                (c.artista && c.artista.toLowerCase().includes(query))
+            );
 
             if (filtradas.length === 0) {
-                container.innerHTML = `<p class="text-center text-sm text-slate-400 py-8">No hay nodos que coincidan con la búsqueda.</p>`;
+                container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">No hay canciones guardadas que coincidan.</p>`;
                 return;
             }
 
-            container.innerHTML = filtradas.map((c, idx) => {
-                const nextNode = filtradas[(idx + 1) % filtradas.length];
-                const esSiguienteLocal = appState.siguienteLocal && appState.siguienteLocal.id === c.id;
-                return `
-                    <div class="node-item relative">
-                        <div class="node-connector p-3.5 rounded-2xl border ${esSiguienteLocal ? 'border-fuchsia-300 bg-fuchsia-50/40' : 'border-slate-200/80 bg-white'} hover:border-purple-300 transition-all shadow-2xs relative z-10">
-                            <div class="flex items-start justify-between gap-2">
-                                <div class="flex items-start gap-3 min-w-0">
-                                    <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
-                                        #${idx + 1}
-                                    </span>
-                                    <div class="min-w-0">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <h4 class="font-bold text-slate-800 text-sm truncate">${c.titulo}</h4>
-                                            ${c.artistaLocal ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Local</span>' : ''}
-                                            ${esSiguienteLocal ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-700">Siguiente Turno</span>' : ''}
-                                        </div>
-                                        <p class="text-xs text-slate-500 truncate">${c.artista}</p>
-                                        <div class="mt-2 flex items-center gap-2 flex-wrap">
-                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">N-${100 + c.id}</span>
-                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-50 text-cyan-700">${c.genero}</span>
-                                            <span class="text-[11px] text-purple-600 font-semibold">&rarr; sigue: N-${100 + nextNode.id}</span>
-                                        </div>
-                                    </div>
-                                </div>
+            container.innerHTML = filtradas.map(c => {
+                const reps = c.vecesReproducida || 0;
+                const pct = Math.min(100, Math.round((reps / MAX_REPETICIONES) * 100));
+                const saturada = reps >= MAX_REPETICIONES;
 
-                                <div class="flex flex-col items-end gap-1.5 shrink-0">
-                                    <button onclick="agregarAParrilla(${c.id}, '${c.titulo.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-bold cursor-pointer">
-                                        + Cola
-                                    </button>
-                                    <span class="text-[11px] text-slate-400 font-semibold">${c.vecesReproducida} rep.</span>
+                return `
+                    <div class="p-3 rounded-2xl border ${
+                        saturada
+                            ? 'border-rose-300 dark:border-rose-700/70 bg-rose-50/40 dark:bg-rose-950/20'
+                            : 'border-slate-200/80 dark:border-[#2a3449] bg-slate-50/70 dark:bg-[#151a24]/70'
+                    } space-y-2">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">${c.titulo}</h4>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300">${c.genero}</span>
+                                    ${c.rutaAudio
+                                        ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">Audio listo</span>'
+                                        : '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300">Sin audio</span>'}
                                 </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${c.artista}</p>
+                            </div>
+
+                            <div class="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                                <button onclick="abrirSelectorAudioParaCancion(${c.id})" class="px-2 py-1 rounded-lg bg-slate-200 dark:bg-[#252e42] hover:bg-cyan-100 dark:hover:bg-cyan-950/70 text-slate-700 dark:text-slate-200 text-[11px] font-bold cursor-pointer" title="Adjuntar o cambiar archivo de audio">
+                                    ${c.rutaAudio ? 'Audio' : '+ Audio'}
+                                </button>
+                                <button onclick="repetirCancion(${c.id})" class="px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200 text-amber-800 dark:text-amber-300 text-[11px] font-bold cursor-pointer" title="Poner de próxima para repetir">
+                                    Repetir
+                                </button>
+                                <button onclick="encolarDesdeGuardadas(${c.id})" class="px-2.5 py-1 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-[11px] font-bold cursor-pointer" title="Añadir a la cola">
+                                    + Encolar
+                                </button>
+                                <button onclick="eliminarCancionGuardada(${c.id})" class="px-2 py-1 rounded-lg bg-rose-100 dark:bg-rose-950/60 hover:bg-rose-200 text-rose-700 dark:text-rose-300 text-[11px] font-bold cursor-pointer" title="Eliminar canción">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-500 dark:text-slate-400 font-medium">
+                                    Rango de repeticiones: <strong class="${saturada ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-200'}">${reps} / ${MAX_REPETICIONES}</strong>
+                                </span>
+                                <span class="text-[10px] font-bold ${saturada ? 'text-rose-600 dark:text-rose-400' : 'text-purple-600 dark:text-purple-400'}">
+                                    ${saturada ? 'Límite alcanzado' : 'Dentro del rango'}
+                                </span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-200 dark:bg-[#252e42] rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all ${saturada ? 'bg-rose-500' : 'bg-gradient-to-r from-fuchsia-500 to-cyan-500'}" style="width: ${pct}%"></div>
                             </div>
                         </div>
                     </div>
@@ -599,82 +848,111 @@ cat << 'EOF' > src/main/resources/templates/index.html
             }).join('');
         }
 
-        function renderFrequencyRanking() {
-            const ordenadas = [...appState.catalogo].sort((a, b) => b.vecesReproducida - a.vecesReproducida);
-            document.getElementById('frequency-ranking-list').innerHTML = ordenadas.map((c, idx) => {
-                const pct = Math.min(100, Math.round((c.vecesReproducida / 3) * 100));
-                const saturada = c.vecesReproducida >= 3;
+        function renderQueueList() {
+            const container = document.getElementById('queue-list-container');
+            if (appState.cola.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4 border border-dashed border-slate-200 dark:border-[#2a3449] rounded-2xl">
+                        <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">No hay canciones encoladas</p>
+                        <p class="text-xs text-slate-400 mt-1">Usa <strong>+ Encolar</strong> o <strong>Repetir</strong> en Canciones Guardadas.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const listaVista = obtenerColaOrdenadaPorModo();
+            const proxima = verProximaEnCola();
+
+            container.innerHTML = listaVista.map((c, idx) => {
+                const esSiguiente = proxima === c;
                 return `
-                    <div class="p-2.5 rounded-xl border ${saturada ? 'border-rose-200 bg-rose-50/40' : 'border-slate-100 bg-slate-50/60'} space-y-1.5">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="font-bold text-slate-700 truncate pr-2"><span class="text-slate-400 mr-1">#${idx + 1}</span>${c.titulo}</span>
-                            <span class="font-bold shrink-0 ${saturada ? 'text-rose-600' : 'text-cyan-600'}">${c.vecesReproducida}x</span>
+                    <div class="p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                        esSiguiente
+                            ? 'border-cyan-400 dark:border-cyan-600 bg-cyan-50/50 dark:bg-cyan-950/30'
+                            : 'border-slate-200/80 dark:border-[#2a3449] bg-slate-50/70 dark:bg-[#151a24]/70'
+                    }">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-7 h-7 rounded-xl font-bold text-xs flex items-center justify-center shrink-0 ${
+                                esSiguiente
+                                    ? 'bg-cyan-600 text-white'
+                                    : 'bg-slate-200 dark:bg-[#252e42] text-slate-700 dark:text-slate-200'
+                            }">
+                                #${idx + 1}
+                            </span>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">${c.titulo}</p>
+                                    ${esSiguiente ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-600 text-white">SIGUIENTE</span>' : ''}
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300">${c.vecesReproducida || 0} rep.</span>
+                                    ${c.rutaAudio ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">Audio</span>' : ''}
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${c.artista} • ${c.genero}</p>
+                            </div>
                         </div>
-                        <div class="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
-                            <div class="h-full rounded-full ${saturada ? 'bg-rose-500' : 'bg-gradient-to-r from-purple-500 to-cyan-500'}" style="width: ${pct}%"></div>
+
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button onclick="reproducirDeColaDirecto(${idx})" class="px-2.5 py-1.5 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-bold cursor-pointer" title="Reproducir ya">
+                                &#9654;
+                            </button>
+                            <button onclick="quitarDeCola(${idx})" class="px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-[#252e42] hover:bg-rose-100 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-600 text-xs font-bold cursor-pointer" title="Quitar de la cola">
+                                &#10005;
+                            </button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function renderHistoryStack() {
+        function renderHistoryList() {
             const container = document.getElementById('movement-log-container');
-            document.getElementById('log-count-badge').textContent = `${appState.historial.length} ops`;
             if (appState.historial.length === 0) {
-                container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">Sin emisiones registradas aún.</p>`;
+                container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">Aún no ha sonado ninguna canción.</p>`;
                 return;
             }
+
             container.innerHTML = appState.historial.map(h => `
-                <div class="p-3 rounded-xl border border-slate-100 bg-slate-50/80 space-y-1">
-                    <div class="flex items-center justify-between text-[10px]">
-                        <span class="font-bold uppercase text-fuchsia-600 bg-fuchsia-50 px-1.5 py-0.5 rounded">AL AIRE</span>
-                        <span class="text-slate-400">${h.fechaFormateada || ''}</span>
+                <div class="p-3 rounded-xl border border-slate-100 dark:border-[#2a3449] bg-slate-50/80 dark:bg-[#151a24]/80">
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 mb-0.5">
+                        <span class="font-bold text-fuchsia-600 dark:text-fuchsia-400">${h.modo || 'FIFO'} • REP #${h.repeticion || 1}</span>
+                        <span>${h.hora || ''}</span>
                     </div>
-                    <p class="text-xs font-bold text-slate-800 truncate">${h.tituloCancion}</p>
-                    <div class="flex items-center justify-between text-[11px] text-slate-500">
-                        <span class="truncate">${h.artista}</span>
-                        ${h.artistaLocal ? '<span class="text-emerald-600 font-bold">Local</span>' : ''}
-                    </div>
+                    <p class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">${h.titulo}</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${h.artista}</p>
                 </div>
             `).join('');
         }
 
-        function togglePlayPause() {
-            appState.isPlaying = !appState.isPlaying;
-            const box = document.getElementById('equalizer-box');
-            const btn = document.getElementById('btn-play-pause');
-            const label = document.getElementById('playback-status-label');
-            if (appState.isPlaying) {
-                box.classList.remove('paused');
-                label.textContent = 'Reproduciendo en vivo';
-                btn.innerHTML = `<i data-lucide="pause-circle" class="w-4 h-4"></i><span>Pausar Simulación</span>`;
-            } else {
-                box.classList.add('paused');
-                label.textContent = 'Simulación pausada';
-                btn.innerHTML = `<i data-lucide="play-circle" class="w-4 h-4"></i><span>Reanudar</span>`;
-            }
-            lucide.createIcons();
-        }
+        audioEl.addEventListener('timeupdate', () => {
+            const fmt = s => {
+                if (!s || isNaN(s)) return '00:00';
+                const sec = Math.floor(s);
+                return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+            };
+            document.getElementById('progress-counter').textContent = `${fmt(audioEl.currentTime)} / ${fmt(audioEl.duration)}`;
+        });
 
-        function startPlaybackSimulation() {
-            setInterval(() => {
-                if (!appState.isPlaying) return;
-                appState.progressSeconds = (appState.progressSeconds + 1) % 222;
-                const mins = String(Math.floor(appState.progressSeconds / 60)).padStart(2, '0');
-                const secs = String(appState.progressSeconds % 60).padStart(2, '0');
-                document.getElementById('progress-current').textContent = `${mins}:${secs}`;
-                document.getElementById('progress-bar').style.width = `${Math.round((appState.progressSeconds / 222) * 100)}%`;
-            }, 1000);
-        }
+        audioEl.addEventListener('play', () => {
+            document.getElementById('equalizer-box').classList.remove('paused');
+        });
+
+        audioEl.addEventListener('pause', () => {
+            document.getElementById('equalizer-box').classList.add('paused');
+        });
+
+        audioEl.addEventListener('ended', () => {
+            playNextSong();
+        });
 
         function startClock() {
             const update = () => {
                 const now = new Date();
                 const t = now.toLocaleTimeString('es-CO', { hour12: false });
-                document.getElementById('clock-desktop').textContent = t;
-                document.getElementById('clock-mobile').textContent = t;
-                document.getElementById('date-desktop').textContent = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+                const d1 = document.getElementById('clock-desktop');
+                const d2 = document.getElementById('clock-mobile');
+                const dt = document.getElementById('date-desktop');
+                if (d1) d1.textContent = t;
+                if (d2) d2.textContent = t;
+                if (dt) dt.textContent = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
             };
             update();
             setInterval(update, 1000);
@@ -683,7 +961,7 @@ cat << 'EOF' > src/main/resources/templates/index.html
         function showToast(message, color = 'purple') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `pointer-events-auto bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-lg border-l-4 border-${color}-400 transition-opacity duration-300`;
+            toast.className = `pointer-events-auto bg-slate-900 dark:bg-[#252e42] text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-lg border-l-4 border-${color}-400 transition-opacity duration-300`;
             toast.textContent = message;
             container.appendChild(toast);
             setTimeout(() => {
@@ -696,4 +974,3 @@ cat << 'EOF' > src/main/resources/templates/index.html
     </script>
 </body>
 </html>
-EOF

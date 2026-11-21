@@ -46,4 +46,12 @@ public class HistorialReproduccion {
     public boolean isArtistaLocal() { return artistaLocal; }
     public String getFranjaHoraria() { return franjaHoraria; }
     public LocalDateTime getFechaHora() { return fechaHora; }
+
+    public void setcancion(Cancion actual) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void setCancion(Cancion actual) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
